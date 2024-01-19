@@ -1,0 +1,103 @@
+# Create a release from the latest tag
+name: Publish Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'Cargo.toml'
+
+jobs:
+  # Build and packages all the things
+  build-binaries:
+    if: |
+      contains(github.event.head_commit.message, 'chore: Release')
+    strategy:
+      matrix:
+        # For these target platforms
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            arch: x86_64
+            ext: deb
+            protoc-arch: linux-x86_64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            arch: x86_64
+            ext: pkg
+            protoc-arch: osx-x86_64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            config-file: fpm/osx.fpm
+            arch: aarch64
+            ext: pkg
+            protoc-arch: osx-aarch_64
+        #- target: x86_64-pc-windows-msvc
+        #  os: windows-latest
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Protoc
+        run: |
+          PROTOC_VERSION=3.20.1
+          PROTOC_ARCH=${{ matrix.protoc-arch }}
+          PROTOC_ZIP=protoc-$PROTOC_VERSION-$PROTOC_ARCH.zip
+          curl --retry 3 --retry-max-time 90 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/$PROTOC_ZIP
+          sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+          sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+          rm -f $PROTOC_ZIP
+          echo "PROTOC=/usr/local/bin/protoc" >> $GITHUB_ENV
+          echo "PROTOC_INCLUDE=/usr/local/include" >> $GITHUB_ENV
+      - name: Install Rust
+        run: |
+          rustup update stable
+          rustup default stable
+      - name: Setup target
+        run: rustup target add ${{ matrix.target }}
+      - name: Install ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2' # Not needed with a .ruby-version file
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+      - name: Install fpm
+        run: |
+          gem install fpm
+      - name: Run package script
+        run: |
+          ./ci-scripts/package.sh -a ${{ matrix.arch }} -e ${{ matrix.ext }}
+      - name: Archive artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ceramic-one_${{ matrix.target }}
+          path: |
+            ceramic-one_${{ matrix.target }}.tar.gz
+
+  release:
+    needs: [build-binaries]
+    runs-on: ubuntu-latest
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: check artifacts
+        run: |
+          ls artifacts/**/*
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - id: release
+        run: |
+          export TAG=$(cargo metadata --format-version=1 --no-deps | jq '.packages[0].version' | tr -d '"')
+          echo "Releasing "$TAG
+          gh release create "v${TAG}" -n "Release of ${TAG}" -t "v${TAG}" --latest artifacts/**/*.tar.gz
