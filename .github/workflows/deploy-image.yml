@@ -9,9 +9,9 @@ on:
         required: true
         options:
           - dev
-          - qa
-          - tnet
-          - prod
+          #- qa
+          #- tnet
+          #- prod
       tag:
         type: string
         description: Tag to deploy

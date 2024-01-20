@@ -42,19 +42,9 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install Protoc
-        run: |
-          PROTOC_VERSION=3.20.1
-          PROTOC_ARCH=${{ matrix.protoc-arch }}
-          PROTOC_ZIP=protoc-$PROTOC_VERSION-$PROTOC_ARCH.zip
-          curl --retry 3 --retry-max-time 90 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/$PROTOC_ZIP
-          sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
-          sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
-          rm -f $PROTOC_ZIP
-          echo "PROTOC=/usr/local/bin/protoc" >> $GITHUB_ENV
-          echo "PROTOC_INCLUDE=/usr/local/include" >> $GITHUB_ENV
       - name: Install Rust
         run: |
+          rustup target add wasm32-wasi
           rustup update stable
           rustup default stable
       - name: Setup target
@@ -73,9 +63,9 @@ jobs:
       - name: Archive artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ceramic-one_${{ matrix.target }}
+          name: checkpointer_${{ matrix.target }}
           path: |
-            ceramic-one_${{ matrix.target }}.tar.gz
+            checkpointer_${{ matrix.target }}.tar.gz
 
   release:
     needs: [build-binaries]
