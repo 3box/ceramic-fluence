@@ -1,12 +1,12 @@
-use std::collections::HashMap;
-use std::ops::DerefMut;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
+use crate::errors::Error;
+use futures_util::StreamExt;
 use reqwest_eventsource::{Event as SseEvent, EventSource};
 use serde::{Deserialize, Serialize};
-use futures_util::StreamExt;
-use crate::errors::Error;
+use std::collections::HashMap;
+use std::ops::DerefMut;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,7 +23,7 @@ pub struct BatchCreationParameters {
 
 struct BatchCreationRequest {
     params: BatchCreationParameters,
-    tx: tokio::sync::oneshot::Sender<Result<(), Error>>
+    tx: tokio::sync::oneshot::Sender<Result<(), Error>>,
 }
 
 pub type EventResponder = tokio::sync::oneshot::Sender<Result<Vec<Event>, Error>>;
@@ -64,24 +64,22 @@ impl Batcher {
         let (tx, rx) = tokio::sync::oneshot::channel();
         self.stream_create_requests.lock().await.insert(
             params.client_id.clone(),
-            BatchCreationRequest {
-                params,
-                tx,
-            }
+            BatchCreationRequest { params, tx },
         );
         let res = rx.await.map_err(Error::Recv)?;
         res
     }
 
-    pub async fn get_batch(&self, client_id: &str, limit: Option<usize>) -> Result<Vec<Event>, Error> {
+    pub async fn get_batch(
+        &self,
+        client_id: &str,
+        limit: Option<usize>,
+    ) -> Result<Vec<Event>, Error> {
         let (tx, rx) = tokio::sync::oneshot::channel();
-        self.stream_get_requests.lock().await.insert(
-            client_id.to_string(),
-            GetRequest {
-                limit,
-                tx,
-            }
-        );
+        self.stream_get_requests
+            .lock()
+            .await
+            .insert(client_id.to_string(), GetRequest { limit, tx });
         match rx.await {
             Err(_) => Err(Error::custom("Failed to receive batch")),
             Ok(r) => r,
@@ -93,8 +91,10 @@ impl Batcher {
         let mut outstanding_events: HashMap<String, PendingResults> = HashMap::default();
         loop {
             let mut streams_to_process = std::mem::replace(&mut streams, HashMap::default());
-            for(k, mut batcher) in streams_to_process.drain() {
-                let entry = outstanding_events.entry(k.clone()).or_insert_with(|| PendingResults::default());
+            for (k, mut batcher) in streams_to_process.drain() {
+                let entry = outstanding_events
+                    .entry(k.clone())
+                    .or_insert_with(|| PendingResults::default());
 
                 loop {
                     match batcher.rx.try_recv() {
@@ -122,10 +122,7 @@ impl Batcher {
                 let (tx, rx) = tokio::sync::mpsc::channel(100);
                 let shutdown = Arc::new(AtomicBool::new(false));
                 tokio::spawn(run_event_source(req.params, shutdown.clone(), tx));
-                streams.insert(client_id, RunningEventSource {
-                    rx,
-                    shutdown
-                });
+                streams.insert(client_id, RunningEventSource { rx, shutdown });
                 req.tx.send(Ok(())).unwrap();
             }
             let get_requests = {
@@ -146,8 +143,9 @@ impl Batcher {
                             }
                         }
                     } else {
-                        let split_idx = std::cmp::min(results.events.len(),
-                            req.limit.unwrap_or(usize::max_value())
+                        let split_idx = std::cmp::min(
+                            results.events.len(),
+                            req.limit.unwrap_or(usize::max_value()),
                         );
                         let mut rem = results.events.split_off(split_idx);
                         std::mem::swap(&mut results.events, &mut rem);
@@ -167,13 +165,15 @@ impl Batcher {
 }
 
 fn event_source_for_params(_params: &BatchCreationParameters) -> EventSource {
-    EventSource::get(&format!("http://localhost:7007/api/v0/feed/aggregation/documents"))
+    EventSource::get(&format!(
+        "http://localhost:7007/api/v0/feed/aggregation/documents"
+    ))
 }
 
 async fn run_event_source(
     params: BatchCreationParameters,
     shutdown: Arc<AtomicBool>,
-    tx: tokio::sync::mpsc::Sender<Result<Event, Error>>
+    tx: tokio::sync::mpsc::Sender<Result<Event, Error>>,
 ) {
     let mut es = event_source_for_params(&params);
     while !shutdown.load(Ordering::Relaxed) {

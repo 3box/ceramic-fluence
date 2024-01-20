@@ -1,13 +1,13 @@
 use actix_web::middleware::{ErrorHandlerResponse, ErrorHandlers, Logger};
 use actix_web::{
-    dev::ServiceResponse, http::StatusCode, delete, get, post, web, App, HttpResponse, HttpServer, Responder,
-    Result,
+    delete, dev::ServiceResponse, get, http::StatusCode, post, web, App, HttpResponse, HttpServer,
+    Responder, Result,
 };
 use serde::Deserialize;
 use tracing_actix_web::TracingLogger;
 
-mod errors;
 mod batcher;
+mod errors;
 mod util;
 
 use batcher::{BatchCreationParameters, Batcher};
@@ -24,15 +24,11 @@ fn trace_error<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
 #[post("/batch")]
 pub async fn create_batcher(
     config: web::Data<Config>,
-    data: web::Json<BatchCreationParameters>
+    data: web::Json<BatchCreationParameters>,
 ) -> Result<impl Responder, Error> {
     let res = match config.batcher.create_batcher(data.into_inner()).await {
-        Ok(_) => {
-            HttpResponse::Ok().finish()
-        }
-        Err(e) => {
-            HttpResponse::InternalServerError().body(e.to_string())
-        }
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     };
     Ok(res)
 }
@@ -46,19 +42,15 @@ pub struct BatchQueryParameters {
 pub async fn get_batch(
     config: web::Data<Config>,
     client_id: web::Path<String>,
-    query: web::Query<BatchQueryParameters>
+    query: web::Query<BatchQueryParameters>,
 ) -> Result<impl Responder, Error> {
     let res = config.batcher.get_batch(&client_id, query.limit).await;
     let res = match res {
-        Ok(res) => {
-            HttpResponse::Ok().json(res)
-        }
+        Ok(res) => HttpResponse::Ok().json(res),
         Err(Error::NotFound(id)) => {
             HttpResponse::NotFound().body(format!("Batcher {} not found", id))
         }
-        Err(e) => {
-            HttpResponse::InternalServerError().body(e.to_string())
-        }
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     };
     Ok(res)
 }
@@ -70,7 +62,6 @@ pub async fn delete_batcher(
 ) -> Result<impl Responder, Error> {
     Ok(HttpResponse::Ok().finish())
 }
-
 
 #[derive(Clone)]
 pub struct Config {
@@ -100,16 +91,14 @@ async fn main() -> Result<(), errors::Error> {
             .app_data(web::Data::new(config.clone()))
             .service(svc)
     })
-        .bind((std::net::Ipv4Addr::LOCALHOST, 8080))
-        .map_err(errors::Error::Bind)?
-        .run()
-        .await?;
+    .bind((std::net::Ipv4Addr::LOCALHOST, 8080))
+    .map_err(errors::Error::Bind)?
+    .run()
+    .await?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-
 }
