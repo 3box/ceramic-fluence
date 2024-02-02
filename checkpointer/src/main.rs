@@ -8,7 +8,6 @@ use tracing_actix_web::TracingLogger;
 
 mod batcher;
 mod errors;
-mod util;
 
 use batcher::{BatchCreationParameters, Batcher};
 use errors::Error;
@@ -63,24 +62,30 @@ pub async fn delete_batcher(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[get("/healthcheck")]
+pub async fn healthcheck() -> impl Responder {
+    HttpResponse::Ok().finish()
+}
+
 #[derive(Clone)]
 pub struct Config {
     batcher: Batcher,
 }
 
 #[actix_web::main]
-async fn main() -> Result<(), errors::Error> {
+async fn main() -> Result<(), Error> {
     let _guard = util::init_tracing();
 
     let config = Config {
-        batcher: Batcher::new(),
+        batcher: Batcher::new()?,
     };
 
     HttpServer::new(move || {
         let svc = web::scope("/api/v1")
             .service(create_batcher)
             .service(get_batch)
-            .service(delete_batcher);
+            .service(delete_batcher)
+            .service(healthcheck);
         App::new()
             .wrap(TracingLogger::default())
             .wrap(ErrorHandlers::new().handler(StatusCode::INTERNAL_SERVER_ERROR, trace_error))
@@ -91,14 +96,9 @@ async fn main() -> Result<(), errors::Error> {
             .app_data(web::Data::new(config.clone()))
             .service(svc)
     })
-    .bind((std::net::Ipv4Addr::LOCALHOST, 8080))
+    .bind(("0.0.0.0", 8080))
     .map_err(errors::Error::Bind)?
     .run()
     .await?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
 }

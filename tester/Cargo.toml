@@ -1,0 +1,17 @@
+[package]
+name = "tester"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.79"
+#ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "main", default-features = false, features = ["url"] }
+#ceramic-http-client = { path = "/Users/dbrowning/code/3box/ceramic-http-client-rs", default-features = false }
+ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "feat/wasi" }
+serde.workspace = true
+serde_json.workspace = true
+tokio = { version = "1.36.0", default-features = false, features = ["macros", "rt-multi-thread"] }
+url.workspace = true
+util = { path = "../util" }
