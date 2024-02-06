@@ -48,6 +48,7 @@ jobs:
       run: |
         make test
     env:
+      DID_DOCUMENT: ${{ secrets.DID_DOCUMENT }}
       DID_PRIVATE_KEY: ${{ secrets.DID_PRIVATE_KEY }}
   build:
     runs-on: ubuntu-latest
