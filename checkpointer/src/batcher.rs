@@ -249,14 +249,13 @@ mod tests {
         let public = std::env::var("DID_DOCUMENT").unwrap_or_else(|_| {
             "did:key:z6MkeqCTPhHPVg3HaAAtsR7vZ6FXkAHPXEbTJs7Y4CQABV9Z".to_string()
         });
-        let private = std::env::var("DID_PRIVATE_KEY")
-            .expect("DID_PRIVATE_KEY not set in environment");
-        JwkSigner::new(
-            DidDocument::new(&public),
-            &private,
-        )
-        .await
-        .expect("Failed to create did for document {public} with key {private}")
+        let private =
+            std::env::var("DID_PRIVATE_KEY").expect("DID_PRIVATE_KEY not set in environment");
+        JwkSigner::new(DidDocument::new(&public), &private)
+            .await
+            .expect(&format!(
+                "Failed to create did for document {public} with key {private}"
+            ))
     }
 
     pub async fn create_model(cli: &remote::CeramicRemoteHttpClient<JwkSigner>) -> StreamId {
