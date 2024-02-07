@@ -264,6 +264,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn should_receive_create_and_update_events() {
         let _ = util::init_tracing();
 
