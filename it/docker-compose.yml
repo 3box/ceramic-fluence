@@ -1,0 +1,22 @@
+# Docker compose to bring up ceramic
+version: '3'
+services:
+  ceramic:
+    image: ceramicnetwork/js-ceramic:4.1.0
+    volumes:
+      - ./data:/root/.ceramic
+    ports:
+      - 7007:7007
+  checkpointer:
+    build: ../
+    ports:
+      - 8080:8080
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+      - CERAMIC_URL=http://ceramic-service:7007
+      - DID_PRIVATE_KEY=${DID_PRIVATE_KEY}
+    depends_on:
+      - ceramic
+    links:
+      - ceramic

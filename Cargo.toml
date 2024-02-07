@@ -1,9 +1,24 @@
 [workspace]
 resolver = "2"
-members = [ 
-  "checkpointer", 
-  "sse-connector"
+members = [
+  "schema",
+  "util",
+  "checkpointer",
+  "tester",
+  "fluence/src/services/event_joiner/modules/event_joiner"
 ]
 
-[workspace.dependencies]
-serde = { version = "1.0", features = ["derive"] }
+  [workspace.dependencies]
+  serde_json = "1.0.111"
+  thiserror = "1.0.56"
+  tracing = "0.1.37"
+  tracing-appender = "0.2.3"
+  url = "2.5.0"
+
+    [workspace.dependencies.serde]
+    version = "1.0"
+    features = [ "derive" ]
+
+    [workspace.dependencies.tracing-subscriber]
+    version = "0.3.17"
+    features = [ "env-filter", "json" ]

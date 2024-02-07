@@ -2,6 +2,7 @@
 name = "checkpointer"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,14 +11,18 @@ actix-web = "4"
 futures-util = "0.3.30"
 reqwest = "0.11.23"
 reqwest-eventsource = "0.5.0"
+schema = { path = "../schema"}
 serde.workspace = true
-serde_json = "1.0.111"
+serde_json.workspace = true
+thiserror.workspace = true
 tokio = { version = "1.35.1", default-features = false, features = ["macros", "sync"] }
 tracing-actix-web = "0.7.6"
-tracing = "0.1.37"
-tracing-appender = "0.2.3"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
-thiserror = "1.0.56"
+tracing.workspace = true
+url.workspace = true
+util = { path = "../util" }
 
 [dev-dependencies]
+#ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "main", default-features = false, features = ["url"] }
+#ceramic-http-client = { path = "/Users/dbrowning/code/3box/ceramic-http-client-rs", default-features = false }
+ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "feat/wasi" }
 wiremock = "0.6.0-rc.2"

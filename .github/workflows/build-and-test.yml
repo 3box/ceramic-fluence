@@ -31,9 +31,6 @@ jobs:
       run: make check-fmt
     - name: Check clippy
       run: make check-clippy
-    - name: Check generated servers
-      run: |
-        make check-checkpointer
   test:
     runs-on: ubuntu-latest
     steps:
@@ -48,7 +45,11 @@ jobs:
         cache-targets: false
     - uses: mozilla-actions/sccache-action@v0.0.3
     - name: Run tests
-      run: make test
+      run: |
+        make test
+    env:
+      DID_DOCUMENT: ${{ vars.DID_DOCUMENT }}
+      DID_PRIVATE_KEY: ${{ secrets.DID_PRIVATE_KEY }}
   build:
     runs-on: ubuntu-latest
     steps:

@@ -12,6 +12,10 @@ pub enum Error {
     #[error("{0}")]
     Json(#[from] serde_json::Error),
     #[error("{0}")]
+    Env(#[from] std::env::VarError),
+    #[error("{0}")]
+    Url(#[from] url::ParseError),
+    #[error("{0}")]
     Custom(String),
 }
 
@@ -23,8 +27,6 @@ impl Error {
 
 impl ResponseError for Error {
     fn status_code(&self) -> reqwest::StatusCode {
-        match self {
-            _err => reqwest::StatusCode::INTERNAL_SERVER_ERROR,
-        }
+        reqwest::StatusCode::INTERNAL_SERVER_ERROR
     }
 }

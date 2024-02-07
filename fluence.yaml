@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=.fluence/schemas/fluence.json
+
+# Defines Fluence Project, most importantly - what exactly you want to deploy and how. You can use `fluence init` command to generate a template for new Fluence project
+
+# Documentation: https://github.com/fluencelabs/cli/tree/main/docs/configs/fluence.md
+
+version: 5
+
+aquaInputPath: fluence/src/aqua/main.aqua
+
+deals:
+  dealName:
+    minWorkers: 1
+    targetWorkers: 3
+    services: [ event_joiner ]
+    spells: [ event_joiner_periodic ]
+
+services:
+  event_joiner:
+    get: fluence/src/services/event_joiner
+
+spells:
+  event_joiner_periodic:
+    get: src/spells/event_joiner_periodic

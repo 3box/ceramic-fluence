@@ -1,0 +1,4 @@
+import EventJoiner from "services.aqua"
+
+func spell():
+    EventJoiner.process_events()

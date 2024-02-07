@@ -31,6 +31,11 @@ build:
 	# Build with all features
 	$(CARGO) build --locked --release --all-features
 
+.PHONY: fluence-build
+fluence-build:
+	# Build with default features
+	fluence build
+
 .PHONY: release
 release: RUSTFLAGS += -D warnings
 release:
@@ -47,10 +52,21 @@ debug:
 
 .PHONY: test
 test:
+	# Setup scaffolding
+	./ci-scripts/setup_test_env.sh
 	# Test with default features
-	$(CARGO) test --locked --release
+	$(CARGO) test -p checkpointer --locked --release
 	# Test with all features
-	$(CARGO) test --locked --release --all-features
+	$(CARGO) test -p checkpointer --locked --release --all-features
+
+.PHONY: test-event-joiner
+test-event-joiner:
+	# Setup scaffolding
+	IT_TEST_CHECKPOINTER=1 ./ci-scripts/setup_test_env.sh
+	# Test with default features
+	$(CARGO) test -p event-joiner --locked --release
+	# Test with all features
+	$(CARGO) test -p event-joiner --locked --release --all-features
 
 .PHONY: check-fmt
 check-fmt:
