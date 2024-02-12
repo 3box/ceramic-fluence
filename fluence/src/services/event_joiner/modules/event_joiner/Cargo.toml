@@ -16,7 +16,7 @@ ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.gi
 env_logger = "0.11.1"
 httparse = "1.8.0"
 log = "0.4.20"
-marine-rs-sdk = "0.10.1"
+marine-rs-sdk = "0.12.0"
 schema = { path = "../../../../../../schema" }
 serde.workspace = true
 serde_json.workspace = true
