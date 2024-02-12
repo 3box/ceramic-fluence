@@ -25,4 +25,4 @@ util = { path = "../util" }
 #ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "main", default-features = false, features = ["url"] }
 #ceramic-http-client = { path = "/Users/dbrowning/code/3box/ceramic-http-client-rs", default-features = false }
 ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "feat/wasi" }
-wiremock = "0.6.0-rc.2"
+wiremock = "0.6.0"
