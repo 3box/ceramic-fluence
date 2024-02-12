@@ -10,7 +10,7 @@ members = [
 
   [workspace.dependencies]
   serde_json = "1.0.111"
-  thiserror = "1.0.56"
+  thiserror = "1.0.57"
   tracing = "0.1.37"
   tracing-appender = "0.2.3"
   url = "2.5.0"
