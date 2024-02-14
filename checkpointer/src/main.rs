@@ -8,9 +8,12 @@ use tracing_actix_web::TracingLogger;
 
 mod batcher;
 mod errors;
+mod persistence;
 
+use crate::persistence::SqlitePersistence;
 use batcher::{BatchCreationParameters, Batcher};
 use errors::Error;
+use std::sync::Arc;
 
 fn trace_error<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
     if let Some(ref e) = res.response().error() {
@@ -45,7 +48,10 @@ pub async fn get_batch(
 ) -> Result<impl Responder, Error> {
     let res = config.batcher.get_batch(&client_id, query.limit).await;
     let res = match res {
-        Ok(res) => HttpResponse::Ok().json(res),
+        Ok(res) => {
+            tracing::info!("Events:{:?}", res);
+            HttpResponse::Ok().json(res)
+        }
         Err(Error::NotFound(id)) => {
             HttpResponse::NotFound().body(format!("Batcher {} not found", id))
         }
@@ -77,7 +83,7 @@ async fn main() -> Result<(), Error> {
     let _guard = util::init_tracing();
 
     let config = Config {
-        batcher: Batcher::new()?,
+        batcher: Batcher::new(Arc::new(SqlitePersistence::new().await?))?,
     };
 
     HttpServer::new(move || {

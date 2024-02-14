@@ -9,6 +9,8 @@ version: 0
 computePeers:
   nox-0:
     computeUnits: 1
+    #tcpPort: 7777
+    #webSocketPort: 9999
 
 offers:
   offer-0:

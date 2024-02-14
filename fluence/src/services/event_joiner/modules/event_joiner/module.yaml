@@ -10,5 +10,8 @@ type: rust
 
 name: event_joiner
 
+envs:
+  RUST_LOG: info
+
 mountedBinaries:
   curl: /usr/bin/curl

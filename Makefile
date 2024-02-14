@@ -58,6 +58,7 @@ test:
 	$(CARGO) test -p checkpointer --locked --release
 	# Test with all features
 	$(CARGO) test -p checkpointer --locked --release --all-features
+	./ci-scripts/teardown_test_env.sh
 
 .PHONY: test-event-joiner
 test-event-joiner:
@@ -67,6 +68,7 @@ test-event-joiner:
 	$(CARGO) test -p event-joiner --locked --release
 	# Test with all features
 	$(CARGO) test -p event-joiner --locked --release --all-features
+	IT_TEST_CHECKPOINTER=1 ./ci-scripts/teardown_test_env.sh
 
 .PHONY: check-fmt
 check-fmt:

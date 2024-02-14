@@ -9,6 +9,8 @@ done
 
 if [ -z "$IT_TEST_CHECKPOINTER" ]; then
   echo "Starting Checkpointer"
+  mkdir it/sqlite
+  export DATABASE_URL="sqlite://${pwd}/it/sqlite/checkpointer.db"
   docker compose -f it/docker-compose.yml up -d checkpointer
 
   count=0

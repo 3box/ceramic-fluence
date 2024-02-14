@@ -21,4 +21,4 @@ services:
 
 spells:
   event_joiner_periodic:
-    get: src/spells/event_joiner_periodic
+    get: fluence/src/spells/event_joiner_periodic

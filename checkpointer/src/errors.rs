@@ -16,6 +16,10 @@ pub enum Error {
     #[error("{0}")]
     Url(#[from] url::ParseError),
     #[error("{0}")]
+    Sqlx(#[from] sqlx::Error),
+    #[error("{0}")]
+    Migrate(#[from] sqlx::migrate::MigrateError),
+    #[error("{0}")]
     Custom(String),
 }
 
