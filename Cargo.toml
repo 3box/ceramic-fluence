@@ -18,7 +18,7 @@ members = [
 
     [workspace.dependencies.ceramic-http-client]
     git = "https://github.com/3box/ceramic-http-client-rs.git"
-    branch = "fix/query-response"
+    branch = "main"
     default-features = false
 
     [workspace.dependencies.serde]

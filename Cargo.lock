@@ -1021,7 +1021,7 @@ dependencies = [
 [[package]]
 name = "ceramic-http-client"
 version = "0.1.0"
-source = "git+https://github.com/3box/ceramic-http-client-rs.git?branch=fix/query-response#315afb0d23950114733fbbd25254a1c2f85c10be"
+source = "git+https://github.com/3box/ceramic-http-client-rs.git?branch=main#50fd458339ecec16cf3f7750c29592bf6394054f"
 dependencies = [
  "anyhow",
  "ceramic-event",
@@ -2098,7 +2098,7 @@ name = "event_joiner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "ceramic-http-client 0.1.0 (git+https://github.com/3box/ceramic-http-client-rs.git?branch=fix/query-response)",
+ "ceramic-http-client 0.1.0 (git+https://github.com/3box/ceramic-http-client-rs.git?branch=main)",
  "chrono",
  "env_logger 0.11.2",
  "httparse",
@@ -4108,7 +4108,7 @@ dependencies = [
 name = "models"
 version = "0.1.0"
 dependencies = [
- "ceramic-http-client 0.1.0 (git+https://github.com/3box/ceramic-http-client-rs.git?branch=fix/query-response)",
+ "ceramic-http-client 0.1.0 (git+https://github.com/3box/ceramic-http-client-rs.git?branch=main)",
  "serde",
 ]
 
@@ -5004,16 +5004,17 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.17.7"
+version = "0.17.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "688c63d65483050968b2a8937f7995f443e27041a0f7700aa59b0822aedebb74"
+checksum = "c17fa4cb658e3583423e915b9f3acc01cceaee1860e33d59ebae66adc3a2dc0d"
 dependencies = [
  "cc",
+ "cfg-if",
  "getrandom",
  "libc",
  "spin 0.9.8",
  "untrusted",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6382,7 +6383,7 @@ name = "tester"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "ceramic-http-client 0.1.0 (git+https://github.com/3box/ceramic-http-client-rs.git?branch=fix/query-response)",
+ "ceramic-http-client 0.1.0 (git+https://github.com/3box/ceramic-http-client-rs.git?branch=main)",
  "clap",
  "curve25519-dalek",
  "models",
