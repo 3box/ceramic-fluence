@@ -54,10 +54,9 @@ pub fn process_events(cfg: ExecutionConfig) -> SseResponse {
     }
 }
 
-const BATCH_PATH: &'static str = "/api/v1/batch";
+const BATCH_PATH: &str = "/api/v1/batch";
 
-const CURL_DEFAULT_ARGUMENTS: &'static [&'static str] =
-    &["-H", "Content-Type: application/json", "-i"];
+const CURL_DEFAULT_ARGUMENTS: &[&str] = &["-H", "Content-Type: application/json", "-i"];
 
 async fn try_process_events(cfg: ExecutionConfig) -> Result<SseResponse, anyhow::Error> {
     let ceramic_endpoint = Url::parse(&cfg.ceramic_endpoint)?;

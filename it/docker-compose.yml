@@ -16,6 +16,7 @@ services:
       - RUST_BACKTRACE=1
       - CERAMIC_URL=http://ceramic-service:7007
       - DID_PRIVATE_KEY=${DID_PRIVATE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - ceramic
     links:

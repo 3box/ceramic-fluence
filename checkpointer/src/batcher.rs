@@ -196,13 +196,13 @@ impl Batcher {
                 }
             }
             for (client_id, results) in outstanding_events.iter_mut() {
-                let events = std::mem::replace(&mut results.events, vec![]);
+                let events = std::mem::take(&mut results.events);
                 if !events.is_empty() {
                     tracing::trace!("Saving {} events", events.len());
                 }
                 let mut unpersisted_events = vec![];
                 for event in events {
-                    if let Err(e) = db.add_event(&client_id, &event).await {
+                    if let Err(e) = db.add_event(client_id, &event).await {
                         tracing::warn!("Failed to persist event: {:?}", e);
                         unpersisted_events.push(event);
                     }

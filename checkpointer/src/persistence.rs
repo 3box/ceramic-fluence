@@ -29,7 +29,7 @@ impl SqlitePersistence {
 
     pub async fn new_with_url(db: &str) -> Result<Self, Error> {
         tracing::info!("Using database at {}", db);
-        let database_exists = Sqlite::database_exists(&db).await?;
+        let database_exists = Sqlite::database_exists(db).await?;
         if !database_exists {
             tracing::info!("Creating database at {}", db);
             Sqlite::create_database(db).await?;

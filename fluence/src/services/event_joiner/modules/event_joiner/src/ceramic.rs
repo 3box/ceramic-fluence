@@ -178,6 +178,6 @@ impl Ceramic {
                 }
             })
             .collect();
-        res.map_err(|e| e.into())
+        res
     }
 }
