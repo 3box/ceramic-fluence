@@ -30,8 +30,11 @@ COPY --from=builder /usr/lib/*-linux-gnu*/libsqlite3.so* /usr/lib/
 COPY --from=builder /usr/lib/*-linux-gnu*/libssl.so* /usr/lib/
 COPY --from=builder /usr/lib/*-linux-gnu*/libcrypto.so* /usr/lib/
 
+RUN mkdir persistence
+
 ENV DID_DOCUMENT=
 ENV DID_PRIVATE_KEY=
+ENV DATABASE_URL=/home/builder/checkpointer/persistence/checkpointer.db
 ENV CERAMIC_URL="http://localhost:7007"
 ENV RUST_LOG=info
 EXPOSE 8080
