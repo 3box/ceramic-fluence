@@ -24,7 +24,7 @@ url.workspace = true
 util = { path = "../util" }
 
 [dev-dependencies]
-ceramic-http-client.workspace = true
+ceramic-http-client = { workspace = true, features = ["remote"] }
 curve25519-dalek = "=4.1.1"
 tmpdir = "1.0.0"
 wiremock = "0.6.0-rc.2"
