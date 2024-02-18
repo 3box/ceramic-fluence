@@ -15,7 +15,7 @@ reqwest-eventsource = "0.5.0"
 schema = { path = "../schema"}
 serde.workspace = true
 serde_json.workspace = true
-sqlx = { version = "0.7.3", features = ["sqlite"] }
+sqlx = { version = "0.7.3", features = ["runtime-tokio", "sqlite"] }
 thiserror.workspace = true
 tokio = { version = "1.35.1", default-features = false, features = ["macros", "sync"] }
 tracing-actix-web = "0.7.6"
@@ -24,9 +24,7 @@ url.workspace = true
 util = { path = "../util" }
 
 [dev-dependencies]
-#ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "main", default-features = false, features = ["url"] }
-#ceramic-http-client = { path = "/Users/dbrowning/code/3box/ceramic-http-client-rs", default-features = false }
-ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "feat/wasi" }
+ceramic-http-client.workspace = true
 curve25519-dalek = "=4.1.1"
 tmpdir = "1.0.0"
 wiremock = "0.6.0-rc.2"
