@@ -166,7 +166,8 @@ impl Ceramic {
                     serde_json::from_value(edge.node.content),
                     edge.node
                         .log
-                        .get(0)
+                        .into_iter()
+                        .next()
                         .ok_or_else(|| anyhow::anyhow!("No log")),
                 ) {
                     (Ok(v), Ok(commit)) => {
