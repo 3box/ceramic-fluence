@@ -97,12 +97,13 @@ pub mod tests {
     use super::*;
 
     async fn setup() -> SqlitePersistence {
-        let dir = tmpdir::TmpDir::new("pers").await.unwrap();
-        std::env::set_var(
-            "DATABASE_URL",
-            format!("sqlite://{}/test.db", dir.as_ref().display()),
-        );
-        SqlitePersistence::new().await.unwrap()
+        let dir = if let Ok(dir) = std::env::var("DATABASE_URL") {
+            dir
+        } else {
+            let dir = tmpdir::TmpDir::new("pers").await.unwrap();
+            format!("sqlite://{}/test.db", dir.as_ref().display())
+        };
+        SqlitePersistence::new_with_url(&dir).await.unwrap()
     }
 
     #[tokio::test]
