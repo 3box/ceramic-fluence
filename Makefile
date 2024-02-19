@@ -21,6 +21,8 @@ DEPLOY_TAG ?= latest
 # Whether or not this is a manual deployment
 MANUAL_DEPLOY ?= false
 
+DATABASE_URL ?= sqlite://checkpointer.db
+
 .PHONY: all
 all: build check-fmt check-clippy test
 
@@ -55,9 +57,9 @@ test:
 	# Setup scaffolding
 	./ci-scripts/setup_test_env.sh
 	# Test with default features
-	$(CARGO) test -p checkpointer --locked --release
+	DATABASE_URL=$DATABASE_URL $(CARGO) test -p checkpointer --locked --release
 	# Test with all features
-	$(CARGO) test -p checkpointer --locked --release --all-features
+	DATABASE_URL=$DATABASE_URL $(CARGO) test -p checkpointer --locked --release --all-features
 	./ci-scripts/teardown_test_env.sh
 
 .PHONY: test-event-joiner
