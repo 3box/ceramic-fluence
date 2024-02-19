@@ -13,7 +13,7 @@ anyhow = "1.0.79"
 #ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "main", default-features = false, features = ["url"] }
 #ceramic-http-client = { path = "/Users/dbrowning/code/3box/ceramic-http-client-rs", default-features = false }
 ceramic-http-client = { git = "https://github.com/3box/ceramic-http-client-rs.git", branch = "feat/wasi", default-features = false }
-env_logger = "0.11.1"
+env_logger = "0.11.2"
 httparse = "1.8.0"
 log = "0.4.20"
 marine-rs-sdk = "0.10.1"
