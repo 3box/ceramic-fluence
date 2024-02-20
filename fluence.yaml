@@ -9,7 +9,7 @@ version: 5
 aquaInputPath: fluence/src/aqua/main.aqua
 
 deals:
-  dealName:
+  ceramic-fluence:
     minWorkers: 1
     targetWorkers: 3
     services: [ event_joiner ]
@@ -21,4 +21,4 @@ services:
 
 spells:
   event_joiner_periodic:
-    get: src/spells/event_joiner_periodic
+    get: fluence/src/spells/event_joiner_periodic

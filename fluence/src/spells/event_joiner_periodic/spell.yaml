@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../../.fluence/schemas/spell.json
+# yaml-language-server: $schema=../../../../.fluence/schemas/spell.json
 
 # Defines a spell. You can use `fluence spell new` command to generate a template for new spell
 

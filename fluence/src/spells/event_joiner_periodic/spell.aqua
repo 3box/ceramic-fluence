@@ -1,4 +1,12 @@
-import EventJoiner from "services.aqua"
+import EventJoiner, ExecutionConfig from "services.aqua"
 
 func spell():
-    EventJoiner.process_events()
+    res = EventJoiner.process_events(ExecutionConfig(
+      client_id = "ceramic-dev-test",
+      public_key = "did:key",
+      private_key = "pk",
+      ceramic_endpoint = "http://localhost:7007",
+      checkpointer_endpoint = "http://localhost:8080",
+      attendance_model_id = "kjz",
+      points_model_id = "kjz"
+    ))

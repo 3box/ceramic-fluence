@@ -4,8 +4,8 @@ data ExecutionConfig:
   private_key: string
   ceramic_endpoint: string
   checkpointer_endpoint: string
-  depin_stream_id: string
-  proof_of_data_stream_id: string
+  attendance_model_id: string
+  points_model_id: string
 
 data SseResponse:
   error: string

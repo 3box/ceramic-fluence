@@ -13,7 +13,7 @@ pub enum EventType {
 pub struct Event {
     pub commit_id: String,
     pub event_type: EventType,
-    pub content: serde_json::Value,
+    pub content: String,
     pub metadata: serde_json::Value,
 }
 

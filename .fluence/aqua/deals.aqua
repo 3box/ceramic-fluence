@@ -9,9 +9,9 @@ data Deal:
     timestamp: string
 
 data Deals:
-    dealName: ?Deal
+    ceramicFluence: ?Deal
 
 func get() -> Deals:
     <- Deals(
-        dealName=nil
+        ceramicFluence=nil
     )

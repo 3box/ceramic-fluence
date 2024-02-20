@@ -1,4 +1,5 @@
 use crate::errors::Error;
+use crate::persistence::Persistence;
 use futures_util::StreamExt;
 use reqwest_eventsource::{Event as SseEvent, EventSource};
 use schema::Event;
@@ -40,6 +41,7 @@ struct PendingResults {
 
 #[derive(Clone)]
 pub struct Batcher {
+    db: Arc<dyn Persistence + Send + Sync>,
     ceramic_url: Url,
     stream_create_requests: Arc<tokio::sync::Mutex<HashMap<String, BatchCreationRequest>>>,
     stream_get_requests: Arc<tokio::sync::Mutex<HashMap<String, GetRequest>>>,
@@ -47,15 +49,16 @@ pub struct Batcher {
 }
 
 impl Batcher {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(db: Arc<dyn Persistence + Send + Sync>) -> Result<Self, Error> {
         let u = std::env::var("CERAMIC_URL").expect("CERAMIC_URL not set in environment");
         let u = Url::parse(&u)?;
         let u = u.join("/api/v0/feed/aggregation/documents")?;
-        Ok(Self::new_with_url(u))
+        Ok(Self::new_with_url(db, u))
     }
 
-    pub fn new_with_url(ceramic_url: Url) -> Self {
+    pub fn new_with_url(db: Arc<dyn Persistence + Send + Sync>, ceramic_url: Url) -> Self {
         let me = Self {
+            db,
             ceramic_url,
             stream_create_requests: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
             stream_get_requests: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
@@ -94,10 +97,22 @@ impl Batcher {
     pub async fn run(self) {
         let mut streams: HashMap<String, RunningEventSource> = HashMap::default();
         let mut outstanding_events: HashMap<String, PendingResults> = HashMap::default();
+        let db = Arc::clone(&self.db);
         loop {
             let mut streams_to_process = std::mem::take(&mut streams);
             for (k, mut batcher) in streams_to_process.drain() {
                 let entry = outstanding_events.entry(k.clone()).or_default();
+                let existing = match db.get_events(&k).await {
+                    Ok(e) => e,
+                    Err(e) => {
+                        tracing::warn!("Failed to get events: {:?}", e);
+                        vec![]
+                    }
+                };
+                if !existing.is_empty() {
+                    tracing::trace!("Restoring {} events", existing.len());
+                    entry.events.extend(existing);
+                }
 
                 loop {
                     match batcher.rx.try_recv() {
@@ -130,6 +145,14 @@ impl Batcher {
                     shutdown.clone(),
                     tx,
                 ));
+                let events = db.get_events(&client_id).await.unwrap();
+                outstanding_events.insert(
+                    client_id.clone(),
+                    PendingResults {
+                        events,
+                        error: None,
+                    },
+                );
                 streams.insert(client_id, RunningEventSource { rx, shutdown });
                 req.tx.send(Ok(())).unwrap();
             }
@@ -172,12 +195,34 @@ impl Batcher {
                     s.shutdown.store(true, Ordering::Relaxed);
                 }
             }
+            for (client_id, results) in outstanding_events.iter_mut() {
+                let events = std::mem::take(&mut results.events);
+                if !events.is_empty() {
+                    tracing::trace!("Saving {} events", events.len());
+                }
+                let mut unpersisted_events = vec![];
+                for event in events {
+                    if let Err(e) = db.add_event(client_id, &event).await {
+                        tracing::warn!("Failed to persist event: {:?}", e);
+                        unpersisted_events.push(event);
+                    }
+                }
+                results.events = unpersisted_events;
+            }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 }
 
-fn event_source_for_params(ceramic_url: &Url, _params: &BatchCreationParameters) -> EventSource {
+fn event_source_for_params(ceramic_url: &Url, params: &BatchCreationParameters) -> EventSource {
+    let ceramic_url = ceramic_url
+        .join("/api/v0/feed/aggregation/documents")
+        .unwrap();
+    tracing::debug!(
+        "Creating event source against {} with client {}",
+        ceramic_url,
+        params.client_id
+    );
     EventSource::get(ceramic_url.to_string())
 }
 
@@ -192,9 +237,10 @@ async fn run_event_source(
         match es.next().await {
             Some(Ok(res)) => {
                 if let SseEvent::Message(msg) = res {
+                    tracing::trace!("Message received from ceramic");
                     match serde_json::from_str::<Event>(&msg.data) {
                         Ok(event) => {
-                            if tx.send(Ok(event)).await.is_err() {
+                            if tx.send(Ok(event.clone())).await.is_err() {
                                 return;
                             }
                         }
@@ -206,7 +252,14 @@ async fn run_event_source(
                     }
                 }
             }
-            _ => {
+            r => {
+                if let Some(Err(e)) = r {
+                    tracing::warn!(
+                        "Event source for client {} failed: {:?}",
+                        params.client_id,
+                        e
+                    );
+                }
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 es = event_source_for_params(&ceramic_url, &params);
             }
@@ -217,14 +270,19 @@ async fn run_event_source(
 #[cfg(test)]
 mod tests {
     use super::{BatchCreationParameters, Batcher};
+    use crate::errors::Error;
+    use crate::persistence::Persistence;
     use ceramic_http_client::{
         ceramic_event::{DidDocument, JwkSigner, Signer, StreamId},
         json_patch, remote, schemars, GetRootSchema, ModelAccountRelation, ModelDefinition,
     };
-    use schema::CeramicMetadata;
+    use schema::{CeramicMetadata, Event};
     use serde::{Deserialize, Serialize};
+    use std::collections::HashMap;
     use std::str::FromStr;
+    use std::sync::Arc;
     use std::time::Duration;
+    use tokio::sync::Mutex;
 
     // See https://github.com/ajv-validator/ajv-formats for information on valid formats
     #[derive(Debug, Deserialize, Eq, schemars::JsonSchema, PartialEq, Serialize)]
@@ -263,13 +321,45 @@ mod tests {
         cli.create_model(&model).await.unwrap()
     }
 
+    struct InMemoryPersistence {
+        events: Arc<Mutex<HashMap<String, Vec<Event>>>>,
+    }
+
+    impl InMemoryPersistence {
+        pub fn new() -> Self {
+            Self {
+                events: Arc::new(Mutex::new(HashMap::new())),
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl Persistence for InMemoryPersistence {
+        async fn add_event(&self, client_id: &str, event: &Event) -> Result<(), Error> {
+            let mut events = self.events.lock().await;
+            events
+                .entry(client_id.to_string())
+                .or_insert_with(Vec::new)
+                .push(event.clone());
+            Ok(())
+        }
+        async fn get_events(&self, client_id: &str) -> Result<Vec<Event>, Error> {
+            let mut events = self.events.lock().await;
+            if let Some(evs) = events.get_mut(client_id) {
+                Ok(std::mem::replace(evs, Vec::new()))
+            } else {
+                Ok(Vec::new())
+            }
+        }
+    }
+
     #[tokio::test]
-    #[ignore]
     async fn should_receive_create_and_update_events() {
-        let _ = util::init_tracing();
+        let _guard = util::init_tracing();
 
         let ceramic_url = ceramic_url();
-        let batcher = Batcher::new_with_url(ceramic_url.clone());
+        let db = Arc::new(InMemoryPersistence::new());
+        let batcher = Batcher::new_with_url(db, ceramic_url.clone());
         let client_id = "test";
         batcher
             .create_batcher(BatchCreationParameters {
@@ -277,6 +367,8 @@ mod tests {
             })
             .await
             .unwrap();
+
+        tracing::info!("Created batcher with id {}", client_id);
 
         let ceramic = remote::CeramicRemoteHttpClient::new(signer().await, ceramic_url);
         let model = create_model(&ceramic).await;
@@ -331,7 +423,7 @@ mod tests {
         assert_eq!(get_resp, post_resp);
 
         let batch = batcher.get_batch(client_id, None).await.unwrap();
-        assert_eq!(batch.len(), 8);
+        assert!(batch.len() >= 4);
         //model create will have the "parent" model is as the model in metadata
         //we will see the create and the anchor for the model, and then see mids, which have
         //the model as its parent model

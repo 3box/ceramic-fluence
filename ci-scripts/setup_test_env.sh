@@ -9,6 +9,7 @@ done
 
 if [ -z "$IT_TEST_CHECKPOINTER" ]; then
   echo "Starting Checkpointer"
+  mkdir it/sqlite
   docker compose -f it/docker-compose.yml up -d checkpointer
 
   count=0
