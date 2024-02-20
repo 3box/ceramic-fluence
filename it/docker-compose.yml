@@ -2,7 +2,7 @@
 version: '3'
 services:
   ceramic:
-    image: ceramicnetwork/js-ceramic:4.1.0
+    image: ceramicnetwork/js-ceramic:dev
     volumes:
       - ./data:/root/.ceramic
     ports:

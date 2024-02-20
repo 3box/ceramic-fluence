@@ -13,7 +13,8 @@ use url::Url;
 use wasm_rs_async_executor::single_threaded as executor;
 
 #[marine]
-#[link(wasm_import_module = "host")]
+// #[link(wasm_import_module = "host")]
+#[host_import]
 extern "C" {
     fn curl(cmd: Vec<String>) -> MountedBinaryStringResult;
 }

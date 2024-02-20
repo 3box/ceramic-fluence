@@ -2088,7 +2088,7 @@ dependencies = [
  "env_logger 0.11.2",
  "httparse",
  "log",
- "marine-rs-sdk",
+ "marine-rs-sdk 0.13.0",
  "marine-rs-sdk-test",
  "models",
  "schema",
@@ -3681,8 +3681,19 @@ version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef9a7c6ed5fa9052474c1cd76d3b3e67dbc4c455c76263c2c043214e12cce6bd"
 dependencies = [
- "marine-macro",
- "marine-rs-sdk-main",
+ "marine-macro 0.10.3",
+ "marine-rs-sdk-main 0.10.3",
+ "serde",
+]
+
+[[package]]
+name = "marine-call-parameters"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d16852b36a3cfc8fa044955380901e78109db0035dc93eea4f666d8f3979072"
+dependencies = [
+ "marine-macro 0.13.0",
+ "marine-rs-sdk-main 0.13.0",
  "serde",
 ]
 
@@ -3768,7 +3779,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acdaa50f8239afa104ef8a99d4219288f68169e29c913485bbd094a35fe79113"
 dependencies = [
  "marine-macro-impl 0.10.3",
- "marine-rs-sdk-main",
+ "marine-rs-sdk-main 0.10.3",
+]
+
+[[package]]
+name = "marine-macro"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cec2cd19fedf559833d0f1e6a33cbcc5cf0efa338bb0975346ff12538a3cdde4"
+dependencies = [
+ "marine-macro-impl 0.13.0",
+ "marine-rs-sdk-main 0.13.0",
 ]
 
 [[package]]
@@ -3798,6 +3819,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "marine-macro-impl"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e09acb3ada67e69a301b6d7b52a915a36176c5eedb312647de7d5b6cf17f51e4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "marine-min-it-version"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3816,7 +3850,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "derivative",
- "marine-rs-sdk-main",
+ "marine-rs-sdk-main 0.10.3",
  "marine-wasm-backend-traits",
  "semver",
  "serde",
@@ -3847,10 +3881,23 @@ version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "034cab8adf708e87db08f093e0c7b8ea49359cc875ed2a778c1bf245b5d9d9f8"
 dependencies = [
- "marine-call-parameters",
- "marine-macro",
- "marine-rs-sdk-main",
- "marine-timestamp-macro",
+ "marine-call-parameters 0.10.3",
+ "marine-macro 0.10.3",
+ "marine-rs-sdk-main 0.10.3",
+ "marine-timestamp-macro 0.10.3",
+ "serde",
+]
+
+[[package]]
+name = "marine-rs-sdk"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f33834365d1e6dd041e821a758000f32bed5b960edb09f9d8c61e340dd82e29"
+dependencies = [
+ "marine-call-parameters 0.13.0",
+ "marine-macro 0.13.0",
+ "marine-rs-sdk-main 0.13.0",
+ "marine-timestamp-macro 0.13.0",
  "serde",
 ]
 
@@ -3859,6 +3906,16 @@ name = "marine-rs-sdk-main"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "031eeea016dab58c1ccb0c65b798cb5e47d214b05115c8c06198717d18275756"
+dependencies = [
+ "log",
+ "serde",
+]
+
+[[package]]
+name = "marine-rs-sdk-main"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58b487a1a1b288ba06c832942eadb43384cd99c9754c1454e1e061dd9866be92"
 dependencies = [
  "log",
  "serde",
@@ -3891,8 +3948,8 @@ dependencies = [
  "log",
  "marine-core",
  "marine-module-interface",
- "marine-rs-sdk",
- "marine-rs-sdk-main",
+ "marine-rs-sdk 0.10.3",
+ "marine-rs-sdk-main 0.10.3",
  "marine-utils",
  "marine-wasm-backend-traits",
  "marine-wasmtime-backend",
@@ -3943,6 +4000,16 @@ name = "marine-timestamp-macro"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f812a03cb13b79ab75e38053a77ecc4b4738a1b485b650d971dec3dbbcb2561"
+dependencies = [
+ "chrono",
+ "quote",
+]
+
+[[package]]
+name = "marine-timestamp-macro"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a5086357724dc2a65e7abe39c85d58b9971198f8678ebc642a69aae1bbc7ae0"
 dependencies = [
  "chrono",
  "quote",
