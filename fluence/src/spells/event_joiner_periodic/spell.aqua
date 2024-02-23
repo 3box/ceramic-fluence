@@ -1,3 +1,8 @@
+aqua EventJoinerPeriodic
+
+-- Note: spell main function must be exported
+export spell
+
 import EventJoiner, ExecutionConfig from "services.aqua"
 
 func spell():

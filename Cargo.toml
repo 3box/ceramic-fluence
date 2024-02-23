@@ -1,12 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-  "schema",
-  "util",
-  "checkpointer",
+  "fluence/src/services/event_joiner/modules/event_joiner",
   "models",
-  "tester",
-  "fluence/src/services/event_joiner/modules/event_joiner"
+  "schema",
+  "checkpointer",
+  "tester"
 ]
 
   [workspace.dependencies]
