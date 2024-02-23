@@ -4,14 +4,13 @@
 
 # Documentation: https://github.com/fluencelabs/cli/tree/main/docs/configs/fluence.md
 
-version: 5
+version: 8
 
-aquaInputPath: fluence/src/aqua/main.aqua
-
-deals:
-  ceramic-fluence:
-    minWorkers: 1
-    targetWorkers: 3
+deployments:
+  myDeployment:
+    targetWorkers: 1
+    pricePerWorkerEpoch: 0.00001
+    initialBalance: 0.001
     services: [ event_joiner ]
     spells: [ event_joiner_periodic ]
 
@@ -22,3 +21,13 @@ services:
 spells:
   event_joiner_periodic:
     get: fluence/src/spells/event_joiner_periodic
+
+aquaDependencies:
+  "@fluencelabs/aqua-lib": 0.9.1
+  "@fluencelabs/spell": 0.6.9
+
+#compileAqua:
+#  default:
+#    input: fluence/src/spells/event_joiner_periodic
+#    output: fluence/src/spells/compiled-aqua
+#    target: ts
