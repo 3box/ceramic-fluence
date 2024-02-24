@@ -7,12 +7,17 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.79"
+base64.workspace = true
 ceramic-http-client = { workspace = true, features = ["remote"] }
+chrono.workspace = true
 clap = { version = "=4.4.18", default-features = false, features = ["derive", "std"] }
 curve25519-dalek = "=4.1.1"
+hmac.workspace = true
+jwt.workspace = true
 models = { path = "../models" }
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 tokio = { version = "1.36.0", default-features = false, features = ["macros", "rt-multi-thread"] }
 tracing.workspace = true
 url.workspace = true

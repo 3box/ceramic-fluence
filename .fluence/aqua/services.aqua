@@ -7,8 +7,8 @@ data ExecutionConfig:
   private_key: string
   ceramic_endpoint: string
   checkpointer_endpoint: string
-  attendance_model_id: string
-  points_model_id: string
+  attestation_model_id: string
+  materialization_model_id: string
 
 data SseResponse:
   error: string

@@ -1,12 +1,11 @@
 use crate::errors::Error;
+use crate::event_source::{EventSource, RunningEventSource};
 use crate::persistence::Persistence;
-use futures_util::StreamExt;
-use reqwest_eventsource::{Event as SseEvent, EventSource};
 use schema::Event;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::ops::DerefMut;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
@@ -26,11 +25,6 @@ pub type EventResponder = tokio::sync::oneshot::Sender<Result<Vec<Event>, Error>
 struct GetRequest {
     limit: Option<usize>,
     tx: EventResponder,
-}
-
-struct RunningEventSource {
-    rx: tokio::sync::mpsc::Receiver<Result<Event, Error>>,
-    shutdown: Arc<AtomicBool>,
 }
 
 #[derive(Default)]
@@ -137,14 +131,8 @@ impl Batcher {
                 std::mem::take(m.deref_mut())
             };
             for (client_id, req) in create_requests.into_iter() {
-                let (tx, rx) = tokio::sync::mpsc::channel(100);
-                let shutdown = Arc::new(AtomicBool::new(false));
-                tokio::spawn(run_event_source(
-                    self.ceramic_url.clone(),
-                    req.params,
-                    shutdown.clone(),
-                    tx,
-                ));
+                let es = EventSource::new(&req.params.client_id, &self.ceramic_url);
+                let running = es.run();
                 let events = db.get_events(&client_id).await.unwrap();
                 outstanding_events.insert(
                     client_id.clone(),
@@ -153,7 +141,7 @@ impl Batcher {
                         error: None,
                     },
                 );
-                streams.insert(client_id, RunningEventSource { rx, shutdown });
+                streams.insert(client_id, running);
                 req.tx.send(Ok(())).unwrap();
             }
             let get_requests = {
@@ -210,59 +198,6 @@ impl Batcher {
                 results.events = unpersisted_events;
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-    }
-}
-
-fn event_source_for_params(ceramic_url: &Url, params: &BatchCreationParameters) -> EventSource {
-    let ceramic_url = ceramic_url
-        .join("/api/v0/feed/aggregation/documents")
-        .unwrap();
-    tracing::debug!(
-        "Creating event source against {} with client {}",
-        ceramic_url,
-        params.client_id
-    );
-    EventSource::get(ceramic_url.to_string())
-}
-
-async fn run_event_source(
-    ceramic_url: Url,
-    params: BatchCreationParameters,
-    shutdown: Arc<AtomicBool>,
-    tx: tokio::sync::mpsc::Sender<Result<Event, Error>>,
-) {
-    let mut es = event_source_for_params(&ceramic_url, &params);
-    while !shutdown.load(Ordering::Relaxed) {
-        match es.next().await {
-            Some(Ok(res)) => {
-                if let SseEvent::Message(msg) = res {
-                    tracing::trace!("Message received from ceramic");
-                    match serde_json::from_str::<Event>(&msg.data) {
-                        Ok(event) => {
-                            if tx.send(Ok(event.clone())).await.is_err() {
-                                return;
-                            }
-                        }
-                        Err(e) => {
-                            if tx.send(Err(Error::Json(e))).await.is_err() {
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-            r => {
-                if let Some(Err(e)) = r {
-                    tracing::warn!(
-                        "Event source for client {} failed: {:?}",
-                        params.client_id,
-                        e
-                    );
-                }
-                tokio::time::sleep(Duration::from_secs(1)).await;
-                es = event_source_for_params(&ceramic_url, &params);
-            }
         }
     }
 }

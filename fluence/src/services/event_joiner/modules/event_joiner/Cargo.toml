@@ -9,13 +9,15 @@ name = "event_joiner"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow.workspace = true
+async-trait.workspace = true
 ceramic-http-client.workspace = true
-chrono = "0.4.34"
+calculator = { path = "../../../../../../calculator" }
+chrono.workspace = true
 env_logger = "0.11.1"
 httparse = "1.8.0"
 log = "0.4.20"
-marine-rs-sdk = "0.13.0"
+marine-rs-sdk = "0.14.0"
 models = { path = "../../../../../../models" }
 schema = { path = "../../../../../../schema" }
 serde.workspace = true
@@ -24,4 +26,4 @@ url.workspace = true
 wasm-rs-async-executor = "0.9.0"
 
 [dev-dependencies]
-marine-rs-sdk-test = "0.11.0"
+marine-rs-sdk-test = "0.16.0"

@@ -4,20 +4,31 @@ members = [
   "fluence/src/services/event_joiner/modules/event_joiner",
   "models",
   "schema",
+  "calculator",
   "checkpointer",
   "tester"
 ]
 
   [workspace.dependencies]
+  anyhow = "1.0.80"
+  async-trait = "0.1.77"
+  base64 = "0.21.7"
+  hmac = "0.12.1"
+  jwt = "0.16.0"
+  log = "0.4.20"
   serde_json = "1.0.111"
+  sha2 = "0.10.8"
   thiserror = "1.0.56"
   tracing = "0.1.37"
   tracing-appender = "0.2.3"
   url = "2.5.0"
 
+    [workspace.dependencies.chrono]
+    version = "0.4.34"
+    features = [ "serde" ]
+
     [workspace.dependencies.ceramic-http-client]
-    git = "https://github.com/3box/ceramic-http-client-rs.git"
-    branch = "main"
+    path = "../ceramic-http-client-rs"
     default-features = false
 
     [workspace.dependencies.serde]

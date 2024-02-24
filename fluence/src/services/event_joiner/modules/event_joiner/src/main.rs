@@ -6,7 +6,6 @@ use http::Http;
 use crate::ceramic::Ceramic;
 use ceramic_http_client::ceramic_event::{DidDocument, StreamId};
 use marine_rs_sdk::{marine, MountedBinaryStringResult};
-use models::EventAttendanceScoring;
 use schema::Event;
 use std::str::FromStr;
 use url::Url;
@@ -27,8 +26,8 @@ pub struct ExecutionConfig {
     pub private_key: String,
     pub ceramic_endpoint: String,
     pub checkpointer_endpoint: String,
-    pub attendance_model_id: String,
-    pub points_model_id: String,
+    pub attestation_model_id: String,
+    pub materialization_model_id: String,
 }
 
 #[marine]
@@ -63,16 +62,19 @@ async fn try_process_events(cfg: ExecutionConfig) -> Result<SseResponse, anyhow:
     let ceramic_endpoint = Url::parse(&cfg.ceramic_endpoint)?;
     let checkpointer_endpoint = Url::parse(&cfg.checkpointer_endpoint)?;
     let client_id = cfg.client_id;
-    let attendance_model_id = StreamId::from_str(&cfg.attendance_model_id)?;
+    let attestation_model_id = StreamId::from_str(&cfg.attestation_model_id)?;
+    let materialization_model_id = StreamId::from_str(&cfg.materialization_model_id)?;
 
     let did = DidDocument::new(&cfg.public_key);
-    let mut ceramic = Ceramic::new(
-        did.clone(),
-        &cfg.private_key,
-        ceramic_endpoint,
-        StreamId::from_str(&cfg.points_model_id)?,
-    )
-    .await?;
+    let ceramic: Box<dyn calculator::Ceramic + Send + Sync> =
+        Box::new(Ceramic::new(did.clone(), &cfg.private_key, ceramic_endpoint).await?);
+    let mut calculator = calculator::Calculator::new(
+        calculator::CalculatorParameters {
+            attestation_model_id,
+            materialization_model_id,
+        },
+        ceramic,
+    );
 
     let cmd: Vec<_> = CURL_DEFAULT_ARGUMENTS
         .iter()
@@ -110,7 +112,7 @@ async fn try_process_events(cfg: ExecutionConfig) -> Result<SseResponse, anyhow:
         log::debug!("Received {} ceramic events", events.len());
         for event in events {
             log::debug!("Processing event: {:?}", event);
-            process_event(&mut ceramic, &attendance_model_id, event).await?;
+            calculator.process_event(event).await?;
             events_processed += 1;
         }
         if now.elapsed().as_secs() > 10 {
@@ -121,46 +123,6 @@ async fn try_process_events(cfg: ExecutionConfig) -> Result<SseResponse, anyhow:
         error: String::default(),
         events: events_processed,
     })
-}
-
-async fn process_event(
-    ceramic: &mut Ceramic,
-    attendance_model_id: &StreamId,
-    event: Event,
-) -> Result<(), anyhow::Error> {
-    log::debug!("Processing event: {:?}", event);
-    let meta: schema::CeramicMetadata = serde_json::from_value(event.metadata)?;
-    let model = StreamId::from_str(&meta.model)?;
-    if model != *attendance_model_id {
-        log::debug!("Skipping event for model {}", model);
-        return Ok(());
-    }
-    if let Ok(attendance) = serde_json::from_str::<models::EventAttendance>(&event.content) {
-        let mut points = ceramic.get_points(&attendance.recipient).await?;
-        let alg = format!("ceramicfluence-{}", attendance.event);
-        if let Some(score) = points.scoring.iter_mut().find(|s| s.algorithm == alg) {
-            log::debug!(
-                "Additional attendance of {} for {}",
-                attendance.recipient,
-                attendance.event
-            );
-            score.points += 1;
-        } else {
-            log::info!(
-                "First attendance of {} for {}",
-                attendance.recipient,
-                attendance.event
-            );
-            points.scoring.push(EventAttendanceScoring {
-                points: 1,
-                algorithm: alg,
-                timestamp: chrono::Utc::now().to_rfc3339(),
-            });
-        }
-        log::info!("Updating points for {}", attendance.recipient);
-        ceramic.update_points(points).await?;
-    }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -179,7 +141,8 @@ mod tests {
                 .unwrap_or_else(|_| "http://localhost:8080".to_string()),
             ceramic_endpoint: std::env::var("CERAMIC_URL")
                 .unwrap_or_else(|_| "http://localhost:8080".to_string()),
-            stream_id: "stream".to_string(),
+            attestation_model_id: "attestation".to_string(),
+            materialization_model_id: "materialization".to_string(),
         };
         let greeting = iface.process_events(cfg);
         assert!(greeting.error.is_empty());
