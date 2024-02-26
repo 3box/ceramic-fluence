@@ -9,7 +9,7 @@ name = "event_joiner"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = "1.0.80"
 ceramic-http-client.workspace = true
 chrono = "0.4.34"
 env_logger = "0.11.1"
