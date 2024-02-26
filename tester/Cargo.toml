@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 ceramic-http-client = { workspace = true, features = ["remote"] }
+chrono.workspace = true
 clap = { version = "=4.4.18", default-features = false, features = ["derive", "std"] }
 curve25519-dalek = "=4.1.1"
 models = { path = "../models" }

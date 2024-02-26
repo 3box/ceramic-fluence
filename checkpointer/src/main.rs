@@ -7,12 +7,17 @@ use serde::Deserialize;
 use tracing_actix_web::TracingLogger;
 
 mod batcher;
+mod calculator;
+mod ceramic;
 mod errors;
+mod event_source;
 mod persistence;
 
 use crate::persistence::SqlitePersistence;
 use batcher::{BatchCreationParameters, Batcher};
+use calculator::CalculatorParameters;
 use errors::Error;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 fn trace_error<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
@@ -68,6 +73,24 @@ pub async fn delete_batcher(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[post("/calculate")]
+pub async fn calculate(config: web::Data<Config>) -> Result<impl Responder, Error> {
+    if config
+        .calculate_active
+        .load(std::sync::atomic::Ordering::Relaxed)
+    {
+        Ok(HttpResponse::Conflict().body("Calculation already in progress"))
+    } else {
+        tracing::info!("Starting calculation");
+        config
+            .calculate_active
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+        let calculator = calculator::Calculator::new(config.calculator_params.clone())?;
+        calculator.run();
+        Ok(HttpResponse::Ok().finish())
+    }
+}
+
 #[get("/healthcheck")]
 pub async fn healthcheck() -> impl Responder {
     HttpResponse::Ok().finish()
@@ -76,6 +99,8 @@ pub async fn healthcheck() -> impl Responder {
 #[derive(Clone)]
 pub struct Config {
     batcher: Batcher,
+    calculator_params: CalculatorParameters,
+    calculate_active: Arc<AtomicBool>,
 }
 
 #[actix_web::main]
@@ -84,6 +109,8 @@ async fn main() -> Result<(), Error> {
 
     let config = Config {
         batcher: Batcher::new(Arc::new(SqlitePersistence::new().await?))?,
+        calculator_params: CalculatorParameters::new().await?,
+        calculate_active: Arc::new(AtomicBool::new(false)),
     };
 
     HttpServer::new(move || {
@@ -91,6 +118,7 @@ async fn main() -> Result<(), Error> {
             .service(create_batcher)
             .service(get_batch)
             .service(delete_batcher)
+            .service(calculate)
             .service(healthcheck);
         App::new()
             .wrap(TracingLogger::default())

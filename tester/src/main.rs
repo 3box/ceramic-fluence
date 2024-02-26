@@ -1,4 +1,4 @@
-use ceramic_http_client::ceramic_event::StreamId;
+use ceramic_http_client::ceramic_event::{Signer, StreamId};
 use ceramic_http_client::remote::CeramicRemoteHttpClient;
 use ceramic_http_client::{
     ceramic_event::{DidDocument, JwkSigner},
@@ -19,7 +19,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Subcmd {
     CreateModels,
-    CreateModelInstances {
+    CreateAttestations {
         #[clap(short, long)]
         model: String,
     },
@@ -32,66 +32,80 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let did = std::env::var("DID_DOCUMENT")
         .unwrap_or_else(|_| "did:key:z6MkeqCTPhHPVg3HaAAtsR7vZ6FXkAHPXEbTJs7Y4CQABV9Z".to_string());
-    let signer = JwkSigner::new(
-        DidDocument::new(&did),
-        &std::env::var("DID_PRIVATE_KEY").unwrap(),
-    )
-    .await?;
+    let did = DidDocument::new(&did);
+    let pk = std::env::var("DID_PRIVATE_KEY").unwrap();
+    let signer = JwkSigner::new(did.clone(), &pk).await?;
 
-    let url = url::Url::parse("http://localhost:7007").unwrap();
-    let client = CeramicRemoteHttpClient::new(signer, url);
+    let url = std::env::var("CERAMIC_URL").unwrap_or_else(|_| "http://localhost:7007".to_string());
+    let url = url::Url::parse(&url)?;
+    tracing::info!("Connecting to Ceramic node at: {}", url);
+    let client = CeramicRemoteHttpClient::new(signer.clone(), url);
 
     match cmd.subcmd {
         Subcmd::CreateModels => {
-            let model_definition = ModelDefinition::new::<models::EventAttendance>(
-                "EventAttendance",
+            let model_definition = ModelDefinition::new::<models::PointAttestations>(
+                "PointAttestations",
                 ModelAccountRelation::List,
             )?;
             let model = client.create_model(&model_definition).await?;
             client.index_model(&model).await?;
             tracing::info!(
-                "Created model: \n   EventAttendance: '{}'",
+                "Created model: \n   PointAttestations: '{}'",
                 model.to_string(),
             );
-            let model_definition = ModelDefinition::new::<models::EventAttendancePoints>(
-                "EventAttendancePoints",
+            let model_definition = ModelDefinition::new::<models::PointMaterialization>(
+                "PointMaterialization",
                 ModelAccountRelation::List,
             )?;
             let model = client.create_model(&model_definition).await?;
             client.index_model(&model).await?;
             tracing::info!(
-                "Created model: \n   EventAttendancePoints: '{}'",
+                "Created model: \n   PointMaterialization: '{}'",
                 model.to_string(),
             );
         }
-        Subcmd::CreateModelInstances { model } => {
+        Subcmd::CreateAttestations { model } => {
             let model = StreamId::from_str(&model)?;
-            let event = client
-                .create_list_instance(
-                    &model,
-                    &models::EventAttendance {
-                        recipient: did.clone(),
-                        jwt: "jwt1".to_string(),
-                        event: "depin".to_string(),
+            let attestations = create_attestations(
+                &signer,
+                vec![
+                    models::PointAttestation {
+                        value: 1,
+                        context: "proof-of-data".to_string(),
+                        timestamp: chrono::Utc::now(),
+                        ref_id: None,
                     },
-                )
-                .await?;
-            tracing::info!("Depin model instance created: {}", event.to_string());
-            let event = client
-                .create_list_instance(
-                    &model,
-                    serde_json::json!({
-                        "recipient": did.clone(),
-                        "jwt": "jwt1",
-                        "event": "proof",
-                    }),
-                )
-                .await?;
-            tracing::info!(
-                "Proof of data model instance created: {}",
-                event.to_string()
-            );
+                    models::PointAttestation {
+                        value: 1,
+                        context: "proof-of-data".to_string(),
+                        timestamp: chrono::Utc::now() + chrono::Duration::hours(1),
+                        ref_id: None,
+                    },
+                    models::PointAttestation {
+                        value: 1,
+                        context: "depin".to_string(),
+                        timestamp: chrono::Utc::now(),
+                        ref_id: None,
+                    },
+                ],
+            )
+            .await?;
+            let attestations_id = client.create_list_instance(&model, &attestations).await?;
+            tracing::info!("Attestations created: {}", attestations_id.to_string());
         }
     }
     Ok(())
+}
+
+async fn create_attestations(
+    signer: &JwkSigner,
+    data: Vec<models::PointAttestation>,
+) -> Result<models::PointAttestations, anyhow::Error> {
+    let verification = signer.sign(&serde_json::to_vec(&data)?).await?;
+    Ok(models::PointAttestations {
+        issuer: signer.id().id.clone(),
+        holder: signer.id().id.clone(),
+        issuer_verification: verification.to_string(),
+        data,
+    })
 }

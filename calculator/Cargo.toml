@@ -1,0 +1,19 @@
+[package]
+name = "calculator"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+base64.workspace = true
+ceramic-http-client.workspace = true
+cid = "0.10.1"
+itertools = "0.12.1"
+models = { path = "../models"}
+schema = { path = "../schema"}
+serde_json.workspace = true
+#ssi = { git = "https://github.com/dbcfd/ssi", branch = "feat/wasi", default-features = false, features = ["ed25519"] }
+tracing = "0.1.40"

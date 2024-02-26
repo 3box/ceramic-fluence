@@ -20,6 +20,8 @@ pub enum Error {
     #[error("{0}")]
     Migrate(#[from] sqlx::migrate::MigrateError),
     #[error("{0}")]
+    Ceramic(#[from] anyhow::Error),
+    #[error("{0}")]
     Custom(String),
 }
 

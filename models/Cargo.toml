@@ -7,4 +7,6 @@ edition = "2021"
 
 [dependencies]
 ceramic-http-client.workspace = true
+chrono.workspace = true
 serde.workspace = true
+schemars = { version = "0.8.16", features = ["chrono"] }
