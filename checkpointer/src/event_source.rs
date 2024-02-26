@@ -39,7 +39,7 @@ impl EventSource {
     pub fn run(self) -> RunningEventSource {
         let (tx, rx) = tokio::sync::mpsc::channel(100);
         let shutdown = Arc::new(AtomicBool::new(false));
-        let join = actix_web::rt::spawn(run(self, tx, shutdown.clone()));
+        let join = tokio::spawn(run(self, tx, shutdown.clone()));
         RunningEventSource { shutdown, rx, join }
     }
 }

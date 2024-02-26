@@ -50,7 +50,7 @@ impl Calculator {
     }
 
     pub fn run(self) {
-        actix_web::rt::spawn(run(self));
+        tokio::spawn(run(self));
     }
 }
 
