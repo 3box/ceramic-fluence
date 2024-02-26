@@ -22,6 +22,7 @@ impl CalculatorParameters {
             std::env::var("DID_PRIVATE_KEY").map_err(|_| Error::custom("Invalid PRIVATE_KEY"))?;
         let url =
             std::env::var("CERAMIC_URL").unwrap_or_else(|_| "http://localhost:70007".to_string());
+        tracing::info!("Creating calculator with DID {} using ceramic {}", did, url);
         let did = DidDocument::new(&did);
         let signer = JwkSigner::new(did.clone(), &pk).await?;
         Ok(Self {

@@ -11,11 +11,9 @@ async-trait.workspace = true
 base64.workspace = true
 ceramic-http-client.workspace = true
 cid = "0.10.1"
-hmac.workspace = true
 itertools = "0.12.1"
-jwt.workspace = true
 models = { path = "../models"}
 schema = { path = "../schema"}
 serde_json.workspace = true
-sha2.workspace = true
+#ssi = { git = "https://github.com/dbcfd/ssi", branch = "feat/wasi", default-features = false, features = ["ed25519"] }
 tracing = "0.1.40"

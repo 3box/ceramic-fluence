@@ -1,14 +1,10 @@
-use base64::prelude::*;
-use ceramic_http_client::ceramic_event::StreamId;
+use ceramic_http_client::ceramic_event::{Signer, StreamId};
 use ceramic_http_client::remote::CeramicRemoteHttpClient;
 use ceramic_http_client::{
     ceramic_event::{DidDocument, JwkSigner},
     ModelAccountRelation, ModelDefinition,
 };
 use clap::{Parser, Subcommand};
-use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
-use sha2::digest::Digest;
 use std::str::FromStr;
 
 #[derive(Parser)]
@@ -43,7 +39,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let url = std::env::var("CERAMIC_URL").unwrap_or_else(|_| "http://localhost:7007".to_string());
     let url = url::Url::parse(&url)?;
     tracing::info!("Connecting to Ceramic node at: {}", url);
-    let client = CeramicRemoteHttpClient::new(signer, url);
+    let client = CeramicRemoteHttpClient::new(signer.clone(), url);
 
     match cmd.subcmd {
         Subcmd::CreateModels => {
@@ -70,62 +66,46 @@ async fn main() -> Result<(), anyhow::Error> {
         }
         Subcmd::CreateAttestations { model } => {
             let model = StreamId::from_str(&model)?;
-            let attestations = client
-                .create_list_instance(
-                    &model,
-                    &create_attestations(
-                        &did,
-                        &pk,
-                        vec![
-                            models::PointAttestation {
-                                value: 1,
-                                context: "proof-of-data".to_string(),
-                                timestamp: chrono::Utc::now(),
-                                ref_id: None,
-                            },
-                            models::PointAttestation {
-                                value: 1,
-                                context: "proof-of-data".to_string(),
-                                timestamp: chrono::Utc::now() + chrono::Duration::hours(1),
-                                ref_id: None,
-                            },
-                            models::PointAttestation {
-                                value: 1,
-                                context: "depin".to_string(),
-                                timestamp: chrono::Utc::now(),
-                                ref_id: None,
-                            },
-                        ],
-                    )?,
-                )
-                .await?;
-            tracing::info!("Attestations created: {}", attestations.to_string());
+            let attestations = create_attestations(
+                &signer,
+                vec![
+                    models::PointAttestation {
+                        value: 1,
+                        context: "proof-of-data".to_string(),
+                        timestamp: chrono::Utc::now(),
+                        ref_id: None,
+                    },
+                    models::PointAttestation {
+                        value: 1,
+                        context: "proof-of-data".to_string(),
+                        timestamp: chrono::Utc::now() + chrono::Duration::hours(1),
+                        ref_id: None,
+                    },
+                    models::PointAttestation {
+                        value: 1,
+                        context: "depin".to_string(),
+                        timestamp: chrono::Utc::now(),
+                        ref_id: None,
+                    },
+                ],
+            )
+            .await?;
+            let attestations_id = client.create_list_instance(&model, &attestations).await?;
+            tracing::info!("Attestations created: {}", attestations_id.to_string());
         }
     }
     Ok(())
 }
 
-fn create_attestations(
-    did: &DidDocument,
-    pk: &str,
+async fn create_attestations(
+    signer: &JwkSigner,
     data: Vec<models::PointAttestation>,
 ) -> Result<models::PointAttestations, anyhow::Error> {
-    // hash our data
-    let mut hasher = sha2::Sha256::default();
-    hasher.update(&serde_json::to_vec(&data)?);
-    let jti = BASE64_STANDARD.encode(hasher.finalize());
-    let key: Hmac<sha2::Sha256> = hmac::Hmac::new_from_slice(pk.as_bytes())?;
-    let claims = models::Claims {
-        iss: "ceramic-tester".to_string(),
-        sub: did.id.clone(),
-        aud: models::AUDIENCE.to_string(),
-        jti,
-    };
-    let token_str = claims.sign_with_key(&key)?;
+    let verification = signer.sign(&serde_json::to_vec(&data)?).await?;
     Ok(models::PointAttestations {
-        issuer: did.id.clone(),
-        holder: did.id.clone(),
-        issuer_verification: token_str,
+        issuer: signer.id().id.clone(),
+        holder: signer.id().id.clone(),
+        issuer_verification: verification.to_string(),
         data,
     })
 }

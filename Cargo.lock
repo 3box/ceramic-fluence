@@ -887,13 +887,10 @@ dependencies = [
  "base64 0.21.7",
  "ceramic-http-client",
  "cid 0.10.1",
- "hmac",
  "itertools 0.12.1",
- "jwt",
  "models",
  "schema",
  "serde_json",
- "sha2 0.10.8",
  "tracing",
 ]
 
@@ -3325,21 +3322,6 @@ dependencies = [
  "serde",
  "smallstr",
  "smallvec",
-]
-
-[[package]]
-name = "jwt"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6204285f77fe7d9784db3fdc449ecce1a0114927a51d5a41c4c7a292011c015f"
-dependencies = [
- "base64 0.13.1",
- "crypto-common",
- "digest 0.10.7",
- "hmac",
- "serde",
- "serde_json",
- "sha2 0.10.8",
 ]
 
 [[package]]
@@ -6566,17 +6548,13 @@ name = "tester"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "base64 0.21.7",
  "ceramic-http-client",
  "chrono",
  "clap",
  "curve25519-dalek",
- "hmac",
- "jwt",
  "models",
  "serde",
  "serde_json",
- "sha2 0.10.8",
  "tokio",
  "tracing",
  "url",

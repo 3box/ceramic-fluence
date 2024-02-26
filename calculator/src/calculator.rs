@@ -1,13 +1,10 @@
 use crate::materialization_cache::MaterializationCache;
 use crate::Ceramic;
 use base64::prelude::*;
-use ceramic_http_client::ceramic_event::StreamId;
-use hmac::{Hmac, Mac};
+use ceramic_http_client::ceramic_event::{ssi, DidDocument, Jwk, StreamId};
 use itertools::Itertools;
-use jwt::VerifyWithKey;
 use models::PointAttestations;
 use schema::Event;
-use sha2::Digest;
 use std::collections::HashSet;
 use std::str::FromStr;
 
@@ -54,7 +51,7 @@ impl Calculator {
         let attestation_stream_id = StreamId::from_str(&event.commit_id)?;
         match serde_json::from_str::<PointAttestations>(&event.content) {
             Ok(attestation) => {
-                if let Err(e) = validate_attestation(&attestation) {
+                if let Err(e) = validate_attestation(&attestation).await {
                     tracing::warn!("Error validating attestation: {}", e);
                     return Ok(());
                 }
@@ -70,18 +67,14 @@ impl Calculator {
     }
 }
 
-fn validate_attestation(attestation: &PointAttestations) -> Result<(), anyhow::Error> {
-    let mut hasher = sha2::Sha256::default();
-    hasher.update(&serde_json::to_vec(&attestation.data)?);
-    let expected_jti = BASE64_STANDARD.encode(hasher.finalize());
-    let key: Hmac<sha2::Sha256> = Hmac::new_from_slice(attestation.issuer.as_bytes())?;
-    let token: jwt::Token<jwt::Header, models::Claims, _> = attestation
-        .issuer_verification
-        .as_str()
-        .verify_with_key(&key)?;
-    if token.claims().jti != expected_jti {
-        anyhow::bail!("Invalid JTI");
-    }
+async fn validate_attestation(attestation: &PointAttestations) -> Result<(), anyhow::Error> {
+    let did = DidDocument::new(&attestation.issuer);
+    let bytes = BASE64_STANDARD.decode(attestation.issuer_verification.as_bytes())?;
+    let sig = String::from_utf8_lossy(&bytes);
+    let (_, _, s) = ssi::jws::split_jws(&sig)?;
+    let jwk = Jwk::new(&did).await?;
+    ssi::jws::verify_bytes(ssi::jwk::Algorithm::EdDSA, &bytes, &jwk, s.as_bytes())?;
+
     Ok(())
 }
 
