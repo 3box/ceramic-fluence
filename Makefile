@@ -57,9 +57,9 @@ test:
 	# Setup scaffolding
 	./ci-scripts/setup_test_env.sh
 	# Test with default features
-	DATABASE_URL=$DATABASE_URL $(CARGO) test -p checkpointer --locked --release
+	DATABASE_URL=$(DATABASE_URL) $(CARGO) test -p checkpointer --locked --release
 	# Test with all features
-	DATABASE_URL=$DATABASE_URL $(CARGO) test -p checkpointer --locked --release --all-features
+	DATABASE_URL=$(DATABASE_URL) $(CARGO) test -p checkpointer --locked --release --all-features
 	./ci-scripts/teardown_test_env.sh
 
 .PHONY: test-event-joiner
