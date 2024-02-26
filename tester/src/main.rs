@@ -104,7 +104,6 @@ async fn create_attestations(
     let verification = signer.sign(&serde_json::to_vec(&data)?).await?;
     Ok(models::PointAttestations {
         issuer: signer.id().id.clone(),
-        holder: signer.id().id.clone(),
         issuer_verification: verification.to_string(),
         data,
     })

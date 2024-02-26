@@ -15,9 +15,8 @@ pub struct PointAttestation {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct PointAttestations {
-    pub holder: String,
     pub issuer: String,
     pub issuer_verification: String,
     pub data: Vec<PointAttestation>,

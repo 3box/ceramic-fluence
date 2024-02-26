@@ -48,6 +48,11 @@ impl Calculator {
             tracing::debug!("Skipping event for model {}", model);
             return Ok(());
         }
+        let holder = meta
+            .controllers
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("No controllers for event"))?;
         let attestation_stream_id = StreamId::from_str(&event.commit_id)?;
         match serde_json::from_str::<PointAttestations>(&event.content) {
             Ok(attestation) => {
@@ -55,12 +60,30 @@ impl Calculator {
                     tracing::warn!("Error validating attestation: {}", e);
                     return Ok(());
                 }
-                unique_events(&mut self.cache, &attestation, &attestation_stream_id).await?;
-                all_events(&mut self.cache, &attestation, &attestation_stream_id).await?;
-                first_all_events(&mut self.cache, &attestation, &attestation_stream_id).await?;
+                unique_events(
+                    &mut self.cache,
+                    &holder,
+                    &attestation,
+                    &attestation_stream_id,
+                )
+                .await?;
+                all_events(
+                    &mut self.cache,
+                    &holder,
+                    &attestation,
+                    &attestation_stream_id,
+                )
+                .await?;
+                first_all_events(
+                    &mut self.cache,
+                    &holder,
+                    &attestation,
+                    &attestation_stream_id,
+                )
+                .await?;
             }
             Err(e) => {
-                tracing::warn!("Error parsing attestation: {}", e);
+                tracing::warn!("Error parsing attestation: {}\n{}", e, event.content);
             }
         }
         Ok(())
@@ -81,6 +104,7 @@ async fn validate_attestation(attestation: &PointAttestations) -> Result<(), any
 const UNIQUE_EVENTS_CONTEXT: &str = "unique-events";
 async fn unique_events(
     cache: &mut MaterializationCache,
+    holder: &str,
     attestation: &PointAttestations,
     attestation_stream_id: &StreamId,
 ) -> Result<(), anyhow::Error> {
@@ -91,10 +115,7 @@ async fn unique_events(
         .into_iter()
         .map(|t| t.0)
         .collect();
-    match cache
-        .get_points(&attestation.holder, UNIQUE_EVENTS_CONTEXT)
-        .await?
-    {
+    match cache.get_points(holder, UNIQUE_EVENTS_CONTEXT).await? {
         Some(mut existing) => {
             existing.points.value = keys.len() as i64;
             tracing::info!(
@@ -107,12 +128,12 @@ async fn unique_events(
         None => {
             tracing::info!(
                 "Creating points for holder {} for {}",
-                attestation.holder,
+                holder,
                 UNIQUE_EVENTS_CONTEXT
             );
             cache
                 .create_points(
-                    &attestation.holder,
+                    holder,
                     UNIQUE_EVENTS_CONTEXT,
                     attestation_stream_id,
                     keys.len() as i64,
@@ -126,6 +147,7 @@ async fn unique_events(
 const ALL_EVENTS_CONTEXT: &str = "all-events";
 async fn all_events(
     cache: &mut MaterializationCache,
+    holder: &str,
     attestation: &PointAttestations,
     attestation_stream_id: &StreamId,
 ) -> Result<(), anyhow::Error> {
@@ -137,7 +159,7 @@ async fn all_events(
         .map(|t| t.0)
         .collect();
     match cache
-        .get_points(&attestation.holder, crate::calculator::ALL_EVENTS_CONTEXT)
+        .get_points(holder, crate::calculator::ALL_EVENTS_CONTEXT)
         .await?
     {
         Some(mut existing) => {
@@ -152,12 +174,12 @@ async fn all_events(
         None => {
             tracing::info!(
                 "Creating points for recipient {} for {}",
-                attestation.holder,
+                holder,
                 ALL_EVENTS_CONTEXT
             );
             cache
                 .create_points(
-                    &attestation.holder,
+                    holder,
                     ALL_EVENTS_CONTEXT,
                     attestation_stream_id,
                     keys.len() as i64,
@@ -172,6 +194,7 @@ const FIRST_ALL_EVENTS_CONTEXT: &str = "first-all-events";
 const TOTAL_EVENTS: usize = 9;
 async fn first_all_events(
     cache: &mut MaterializationCache,
+    holder: &str,
     attestation: &PointAttestations,
     attestation_stream_id: &StreamId,
 ) -> Result<(), anyhow::Error> {
@@ -191,18 +214,18 @@ async fn first_all_events(
         .collect();
     if events_by_last_time.len() >= TOTAL_EVENTS
         && cache
-            .get_points(&attestation.holder, FIRST_ALL_EVENTS_CONTEXT)
+            .get_points(holder, FIRST_ALL_EVENTS_CONTEXT)
             .await?
             .is_none()
     {
         tracing::info!(
             "Creating points for recipient {} for {}",
-            attestation.holder,
+            holder,
             FIRST_ALL_EVENTS_CONTEXT
         );
         cache
             .create_points(
-                &attestation.holder,
+                holder,
                 FIRST_ALL_EVENTS_CONTEXT,
                 attestation_stream_id,
                 events_by_last_time.first().unwrap().timestamp.timestamp(),
