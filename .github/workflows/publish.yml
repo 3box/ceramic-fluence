@@ -31,6 +31,8 @@ jobs:
         env:
           AWS_REGION: us-east-1
           CERAMIC_URL: ${{ vars.CERAMIC_URL }}
+          DID_DOCUMENT: ${{ vars.DID_DOCUMENT }}
+          DID_PRIVATE_KEY: ${{ secrets.DID_PRIVATE_KEY }}
       -
         name: Build and Publish
         id: build
