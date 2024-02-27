@@ -290,7 +290,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_receive_create_and_update_events() {
-        let _guard = util::init_tracing();
+        let _ = env_logger::try_init();
 
         let ceramic_url = ceramic_url();
         let db = Arc::new(InMemoryPersistence::new());

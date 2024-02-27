@@ -21,6 +21,8 @@ RUN --mount=type=cache,target=/home/builder/.cargo \
 
 FROM --platform=linux/amd64 debian:bookworm-slim
 
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /home/builder/checkpointer/bin/* /usr/bin
 
 # Adding this step after copying the ceramic-one binary so that we always take the newest libs from the builder if the

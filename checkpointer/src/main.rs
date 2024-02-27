@@ -16,9 +16,24 @@ mod persistence;
 use crate::persistence::SqlitePersistence;
 use batcher::{BatchCreationParameters, Batcher};
 use calculator::CalculatorParameters;
+use clap::{Parser, Subcommand};
 use errors::Error;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+
+#[derive(Parser)]
+#[command(name = "CeramicCheckpointer")]
+#[command(version = "1.0")]
+#[command(about = "Provides batching and checkpointing for ceramic sse feeds", long_about = None)]
+struct Cli {
+    #[clap(subcommand)]
+    subcmd: Option<SubCmd>,
+}
+
+#[derive(Subcommand)]
+enum SubCmd {
+    SshCheck,
+}
 
 fn trace_error<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
     if let Some(ref e) = res.response().error() {
@@ -106,13 +121,32 @@ pub struct Config {
 #[actix_web::main]
 async fn main() -> Result<(), Error> {
     let _guard = util::init_tracing();
+    let cmd = Cli::parse();
 
-    let config = Config {
-        batcher: Batcher::new(Arc::new(SqlitePersistence::new().await?))?,
-        calculator_params: CalculatorParameters::new().await?,
-        calculate_active: Arc::new(AtomicBool::new(false)),
-    };
+    let calculator_params = CalculatorParameters::new().await?;
+    match cmd.subcmd {
+        Some(SubCmd::SshCheck) => {
+            let url = calculator_params
+                .ceramic_url
+                .join("/api/v0/node/healthcheck")?;
+            if !reqwest::get(url).await?.status().is_success() {
+                return Err(Error::custom("Failed to connect to ceramic"));
+            }
+        }
+        None => {
+            let config = Config {
+                batcher: Batcher::new(Arc::new(SqlitePersistence::new().await?))?,
+                calculator_params,
+                calculate_active: Arc::new(AtomicBool::new(false)),
+            };
+            start_server(config).await?;
+        }
+    }
 
+    Ok(())
+}
+
+async fn start_server(config: Config) -> Result<(), Error> {
     HttpServer::new(move || {
         let svc = web::scope("/api/v1")
             .service(create_batcher)
