@@ -9,8 +9,7 @@ edition = "2021"
 anyhow = "1.0.79"
 ceramic-http-client = { workspace = true, features = ["remote"] }
 chrono.workspace = true
-clap = { version = "=4.4.18", default-features = false, features = ["derive", "std"] }
-curve25519-dalek = "=4.1.1"
+clap.workspace = true
 models = { path = "../models" }
 serde.workspace = true
 serde_json.workspace = true

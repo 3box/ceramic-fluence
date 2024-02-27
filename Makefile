@@ -21,7 +21,9 @@ DEPLOY_TAG ?= latest
 # Whether or not this is a manual deployment
 MANUAL_DEPLOY ?= false
 
-DATABASE_URL ?= sqlite://checkpointer.db
+RUST_LOG ?= info
+
+.EXPORT_ALL_VARIABLES:
 
 .PHONY: all
 all: build check-fmt check-clippy test
@@ -57,9 +59,9 @@ test:
 	# Setup scaffolding
 	./ci-scripts/setup_test_env.sh
 	# Test with default features
-	DATABASE_URL=$(DATABASE_URL) $(CARGO) test -p checkpointer --locked --release
+	RUST_LOG=$(RUST_LOG) $(CARGO) test -p checkpointer --locked --release
 	# Test with all features
-	DATABASE_URL=$(DATABASE_URL) $(CARGO) test -p checkpointer --locked --release --all-features
+	RUST_LOG=$(RUST_LOG) $(CARGO) test -p checkpointer --locked --release --all-features
 	./ci-scripts/teardown_test_env.sh
 
 .PHONY: test-event-joiner
@@ -87,8 +89,14 @@ check-clippy:
 run:
 	RUST_LOG=WARN,checkpointer=DEBUG $(CARGO) run --all-features --locked --release --bin checkpointer
 
+.PHONY: build-docker
+build-docker:
+	./ci-scripts/setup_test_env.sh
+	./ci-scripts/image.sh
+	./ci-scripts/teardown_test_env.sh
+
 .PHONY: publish-docker
-publish-docker:
+publish-docker: build-docker
 	./ci-scripts/publish.sh
 
 .PHONY: schedule-ecs-deployment

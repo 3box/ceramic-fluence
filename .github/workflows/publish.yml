@@ -30,6 +30,7 @@ jobs:
           password: ${{ env.AWS_SECRET_ACCESS_KEY }}
         env:
           AWS_REGION: us-east-1
+          CERAMIC_URL: ${{ vars.CERAMIC_URL }}
       -
         name: Build and Publish
         id: build

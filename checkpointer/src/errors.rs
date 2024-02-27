@@ -22,6 +22,8 @@ pub enum Error {
     #[error("{0}")]
     Ceramic(#[from] anyhow::Error),
     #[error("{0}")]
+    Reqwest(#[from] reqwest::Error),
+    #[error("{0}")]
     Custom(String),
 }
 

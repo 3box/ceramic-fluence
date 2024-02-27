@@ -2,7 +2,7 @@
 version: '3'
 services:
   ceramic:
-    image: ceramicnetwork/js-ceramic:dev
+    image: ceramicnetwork/js-ceramic:5.2.0
     volumes:
       - ./data:/root/.ceramic
     ports:
@@ -15,6 +15,7 @@ services:
       - RUST_LOG=info
       - RUST_BACKTRACE=1
       - CERAMIC_URL=http://ceramic-service:7007
+      - DID_DOCUMENT=${DID_DOCUMENT}
       - DID_PRIVATE_KEY=${DID_PRIVATE_KEY}
       - DATABASE_URL=${DATABASE_URL}
     depends_on:

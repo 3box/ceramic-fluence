@@ -108,6 +108,8 @@ pub mod tests {
 
     #[tokio::test]
     async fn can_add_and_retrieve_events() {
+        let _ = env_logger::try_init();
+
         let pool = setup().await;
         let client_id = "test_client";
         let event = Event {

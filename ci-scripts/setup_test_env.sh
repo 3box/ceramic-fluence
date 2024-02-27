@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 docker compose -f it/docker-compose.yml up -d ceramic
 
+if [ -z "$DID_DOCUMENT" ]; then
+  echo "No DID_DOCUMENT specified, cannot setup environment"
+  exit 1
+fi
+
 echo "Starting ceramic"
 while [ $(curl -s -o /dev/null -I -w "%{http_code}" "http://localhost:7007/api/v0/node/healthcheck") -ne "200" ]; do
   echo "Ceramic is not yet ready, waiting and trying again"
   sleep 1
 done
 
-if [ -z "$IT_TEST_CHECKPOINTER" ]; then
+if [ -n "${IT_TEST_CHECKPOINTER}" ]; then
   echo "Starting Checkpointer"
   mkdir it/sqlite
   docker compose -f it/docker-compose.yml up -d checkpointer
