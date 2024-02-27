@@ -30,12 +30,13 @@ jobs:
           password: ${{ env.AWS_SECRET_ACCESS_KEY }}
         env:
           AWS_REGION: us-east-1
-          CERAMIC_URL: ${{ vars.CERAMIC_URL }}
-          DID_DOCUMENT: ${{ vars.DID_DOCUMENT }}
-          DID_PRIVATE_KEY: ${{ secrets.DID_PRIVATE_KEY }}
       -
         name: Build and Publish
         id: build
+        env:
+          CERAMIC_URL: ${{ vars.CERAMIC_URL }}
+          DID_DOCUMENT: ${{ vars.DID_DOCUMENT }}
+          DID_PRIVATE_KEY: ${{ secrets.DID_PRIVATE_KEY }}
         run: |
           SHA_TAG=$(echo ${{ github.SHA }} | head -c 12)
           DEPLOY_TAG=$SHA_TAG
