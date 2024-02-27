@@ -7,12 +7,12 @@ import EventJoiner, ExecutionConfig from "services.aqua"
 
 func spell():
     res = EventJoiner.process_events(ExecutionConfig(
-      client_id = "ceramic-dev-test",
-      public_key = "did:key",
-      private_key = "pk",
-      ceramic_endpoint = "http://localhost:7007",
-      checkpointer_endpoint = "http://localhost:8080",
+      client_id = "ceramic-fluence-test",
+      public_key = "did:key:z6Mkk3rtfoKDMMG4zyarNGwCQs44GSQ49pcYKQspHJPXSnVw",
+      private_key = "810d51e02cb63066b7d2d2ec67e05e18c29b938412050bdd3c04d878d8001f3c",
+      ceramic_endpoint = "https://ceramic-demo.hirenodes.io",
+      checkpointer_endpoint = "https://fluence-dev-1286760926.us-east-2.elb.amazonaws.com",
       attestation_issuer = "did:key:z6MkhER5181mt9PBCrnVvL9AcdWyzSzj4PLgGVKSFjJ8obMN",
-      attestation_model_id = "kjz",
-      materialization_model_id = "kjz"
+      attestation_model_id = "kjzl6hvfrbw6c80bfxfy0hm7nsn978jwjrmoju294jvzv9mu2lcr6g17ri6qgt3",
+      materialization_model_id = "kjzl6hvfrbw6c7x410cdiy03gf5n3iiwnn20sf6p31db8kuxk25u8dfop4x8koy"
     ))
