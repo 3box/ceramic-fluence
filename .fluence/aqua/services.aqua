@@ -7,6 +7,7 @@ data ExecutionConfig:
   private_key: string
   ceramic_endpoint: string
   checkpointer_endpoint: string
+  attestation_issuer: string
   attestation_model_id: string
   materialization_model_id: string
 

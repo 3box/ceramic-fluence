@@ -12,6 +12,7 @@ func spell():
       private_key = "pk",
       ceramic_endpoint = "http://localhost:7007",
       checkpointer_endpoint = "http://localhost:8080",
+      attestation_issuer = "did:key:z6MkhER5181mt9PBCrnVvL9AcdWyzSzj4PLgGVKSFjJ8obMN",
       attestation_model_id = "kjz",
       materialization_model_id = "kjz"
     ))
