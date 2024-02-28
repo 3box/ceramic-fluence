@@ -13,7 +13,6 @@ members = [
   anyhow = "1.0.80"
   async-trait = "0.1.77"
   base64 = "0.21.7"
-  clap = { version = "=4.4.18", default-features = false, features = ["derive", "std"] }
   curve25519-dalek = "=4.1.1"
   hmac = "0.12.1"
   jwt = "0.16.0"
@@ -24,6 +23,11 @@ members = [
   tracing = "0.1.37"
   tracing-appender = "0.2.3"
   url = "2.5.0"
+
+    [workspace.dependencies.clap]
+    version = "=4.4.18"
+    default-features = false
+    features = [ "derive", "std" ]
 
     [workspace.dependencies.chrono]
     version = "0.4.34"

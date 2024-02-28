@@ -26,6 +26,7 @@ pub struct ExecutionConfig {
     pub private_key: String,
     pub ceramic_endpoint: String,
     pub checkpointer_endpoint: String,
+    pub attestation_issuer: String,
     pub attestation_model_id: String,
     pub materialization_model_id: String,
 }
@@ -64,12 +65,14 @@ async fn try_process_events(cfg: ExecutionConfig) -> Result<SseResponse, anyhow:
     let client_id = cfg.client_id;
     let attestation_model_id = StreamId::from_str(&cfg.attestation_model_id)?;
     let materialization_model_id = StreamId::from_str(&cfg.materialization_model_id)?;
+    let attestation_issuer = DidDocument::new(&cfg.attestation_issuer);
 
     let did = DidDocument::new(&cfg.public_key);
     let ceramic: Box<dyn calculator::Ceramic + Send + Sync> =
         Box::new(Ceramic::new(did.clone(), &cfg.private_key, ceramic_endpoint).await?);
     let mut calculator = calculator::Calculator::new(
         calculator::CalculatorParameters {
+            attestation_issuer,
             attestation_model_id,
             materialization_model_id,
         },

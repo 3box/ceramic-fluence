@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 #[derive(Clone, Debug)]
 pub struct CalculatorParameters {
+    pub attestation_issuer: DidDocument,
     pub attestation_model_id: StreamId,
     pub materialization_model_id: StreamId,
 }
@@ -23,7 +24,12 @@ impl CalculatorParameters {
             std::env::var("MATERIALIZATION_MODEL_ID").unwrap_or_else(|_| {
                 "kjzl6hvfrbw6c88slfzg2mw6jvin2hgv2v24tbl9u0xc97f4pr4755xjr2l6sck".to_string()
             });
+        let attestation_issuer =
+            DidDocument::new(&std::env::var("ATTESTATION_ISSUER").unwrap_or_else(|_| {
+                "did:key:z6MkhER5181mt9PBCrnVvL9AcdWyzSzj4PLgGVKSFjJ8obMN".to_string()
+            }));
         Ok(Self {
+            attestation_issuer,
             attestation_model_id: StreamId::from_str(&attestation_model_id)?,
             materialization_model_id: StreamId::from_str(&materialization_model_id)?,
         })
@@ -56,9 +62,16 @@ impl Calculator {
         let attestation_stream_id = StreamId::from_str(&event.commit_id)?;
         match serde_json::from_str::<PointAttestations>(&event.content) {
             Ok(attestation) => {
+                if attestation.issuer != self.params.attestation_issuer.id {
+                    tracing::warn!(
+                        "Attestation issuer {} does not match expected {}",
+                        attestation.issuer,
+                        self.params.attestation_issuer.id
+                    );
+                    return Ok(());
+                }
                 if let Err(e) = validate_attestation(&attestation).await {
                     tracing::warn!("Error validating attestation: {}", e);
-                    return Ok(());
                 }
                 unique_events(
                     &mut self.cache,
