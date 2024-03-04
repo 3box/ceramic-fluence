@@ -16,7 +16,7 @@ calculator = { path = "../../../../../../calculator" }
 chrono.workspace = true
 env_logger = "0.11.1"
 httparse = "1.8.0"
-log = "0.4.20"
+log = "0.4.21"
 marine-rs-sdk = "0.14.0"
 models = { path = "../../../../../../models" }
 schema = { path = "../../../../../../schema" }
